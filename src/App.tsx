@@ -10,6 +10,7 @@ import {
   Filter,
   Folder,
   HardDrive,
+  HelpCircle,
   KeyRound,
   Library,
   Moon,
@@ -32,11 +33,13 @@ import { createCategory, createPrompt, createTab, exportLibrary, filterPrompts, 
 import { PromptList } from './components/PromptList';
 import { PromptEditor } from './components/PromptEditor';
 import { SettingsPanel } from './components/SettingsPanel';
+import { HelpPanel } from './components/HelpPanel';
 import { CategoryNav } from './components/CategoryNav';
 import type { Category, Prompt, WorkspaceTab } from './types/domain';
 
 export default function App() {
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const tabs = useLiveQuery(() => db.tabs.orderBy('position').toArray(), []);
   const categories = useLiveQuery(() => db.categories.orderBy('position').toArray(), []);
@@ -203,6 +206,10 @@ export default function App() {
               <Settings size={17} />
               {!sidebarCollapsed && <span>Einstellungen</span>}
             </button>
+            <button className={`sidebar-nav-row ${sidebarCollapsed ? 'justify-center px-0' : ''}`} title="Hilfe" onClick={() => setShowHelp(true)}>
+              <HelpCircle size={17} />
+              {!sidebarCollapsed && <span>Hilfe</span>}
+            </button>
           </div>
 
           <div className={`mb-5 ${sidebarCollapsed ? 'flex justify-center' : 'pl-[2.5px]'}`}>
@@ -308,6 +315,7 @@ export default function App() {
       </section>
 
       {showSettings && <SettingsPanel settings={settings} onClose={() => setShowSettings(false)} />}
+      {showHelp && <HelpPanel onClose={() => setShowHelp(false)} />}
     </main>
   );
 }
