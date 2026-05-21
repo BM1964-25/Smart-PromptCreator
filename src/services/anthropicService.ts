@@ -1,9 +1,43 @@
+import type { OptimizerPreferences } from '../types/domain';
+import { buildOptimizationPrompt } from './openaiService';
+
 const anthropicVersion = '2023-06-01';
 const testModel = 'claude-3-5-haiku-latest';
 
 export interface AnthropicTestResult {
   ok: boolean;
   message: string;
+}
+
+export async function optimizeWithAnthropic(apiKey: string, content: string, preferences: OptimizerPreferences, model = testModel) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey.trim(),
+      'anthropic-version': anthropicVersion
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: preferences.strength === 'premium' ? 1800 : 1000,
+      temperature: preferences.strength === 'premium' ? 0.5 : 0.35,
+      system: 'Du bist ein professioneller Prompt Engineer. Antworte nur mit dem optimierten Prompt, ohne Vorrede.',
+      messages: [
+        {
+          role: 'user',
+          content: buildOptimizationPrompt(content, preferences)
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    const details = await response.json().catch(() => undefined);
+    throw new Error(details?.error?.message || `Anthropic Anfrage fehlgeschlagen (${response.status}).`);
+  }
+
+  const data = await response.json();
+  return data?.content?.[0]?.text?.trim() || '';
 }
 
 export async function testAnthropicConnection(apiKey: string): Promise<AnthropicTestResult> {

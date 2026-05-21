@@ -1,6 +1,22 @@
 export type PromptMode = 'gpt' | 'claude' | 'midjourney' | 'coding' | 'marketing';
+export type OptimizerGoal = 'writing' | 'coding' | 'marketing' | 'analysis' | 'image' | 'automation';
+export type OptimizerAudience = 'general' | 'beginner' | 'expert' | 'customer' | 'management' | 'developer';
+export type OptimizerTone = 'precise' | 'professional' | 'creative' | 'concise' | 'detailed' | 'persuasive';
+export type OptimizerFormat = 'markdown' | 'list' | 'table' | 'json' | 'steps' | 'freeform';
+export type OptimizerStrength = 'fast' | 'balanced' | 'premium';
+export type AiProvider = 'local' | 'openai' | 'anthropic' | 'ollama';
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type LicenseStatus = 'inactive' | 'active' | 'grace' | 'expired';
+
+export interface OptimizerPreferences {
+  goal: OptimizerGoal;
+  audience: OptimizerAudience;
+  tone: OptimizerTone;
+  format: OptimizerFormat;
+  strength: OptimizerStrength;
+  language: 'auto' | 'de' | 'en';
+  askClarifyingQuestions: boolean;
+}
 
 export interface Prompt {
   id?: string;
