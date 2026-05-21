@@ -9,6 +9,7 @@ export async function createPrompt(input: Partial<Prompt>) {
   const prompt: Prompt = {
     id: crypto.randomUUID(),
     title: input.title || 'Neuer Prompt',
+    description: input.description || '',
     content: input.content || '',
     optimizedContent: input.optimizedContent || '',
     categoryId: input.categoryId || fallbackCategory?.id || '',
@@ -86,7 +87,7 @@ export async function findOrCreateCategory(tabId: string, name: string) {
 export function filterPrompts(prompts: Prompt[], query: string, favoriteOnly: boolean, categoryId?: string, tabId?: string) {
   const normalized = query.trim().toLowerCase();
   return prompts.filter((prompt) => {
-    const text = [prompt.title, prompt.content, prompt.optimizedContent, prompt.tags.join(' ')].join(' ').toLowerCase();
+    const text = [prompt.title, prompt.description || '', prompt.content, prompt.optimizedContent, prompt.tags.join(' ')].join(' ').toLowerCase();
     return (
       (!tabId || prompt.tabId === tabId) &&
       (!categoryId || prompt.categoryId === categoryId) &&
@@ -129,6 +130,7 @@ export async function importLibrary(payload: ImportPayload, conflictMode: 'dupli
       await db.prompts.put({
         id,
         title: input.title || 'Importierter Prompt',
+        description: input.description || '',
         content: input.content || '',
         optimizedContent: input.optimizedContent || input.optimized || '',
         categoryId: input.categoryId || '',

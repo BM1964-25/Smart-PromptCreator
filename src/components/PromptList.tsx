@@ -45,7 +45,9 @@ export function PromptList({ prompts, categories, selectedId, search, onSearchCh
                 <h3 className="line-clamp-2 text-sm font-semibold">{prompt.title}</h3>
                 {prompt.favorite && <Star className="shrink-0 fill-amber text-amber" size={15} />}
               </div>
-              <p className="mt-2 line-clamp-2 text-xs leading-5 text-neutral-500 dark:text-neutral-400">{prompt.content || 'Noch kein Inhalt'}</p>
+              <p className="mt-2 line-clamp-2 text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                {prompt.description || prompt.content || 'Noch kein Inhalt'}
+              </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {category && (
                   <span className="rounded px-2 py-1 text-xs text-white" style={{ backgroundColor: category.color }}>

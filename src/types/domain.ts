@@ -21,6 +21,7 @@ export interface OptimizerPreferences {
 export interface Prompt {
   id?: string;
   title: string;
+  description: string;
   content: string;
   optimizedContent: string;
   categoryId: string;
@@ -78,7 +79,7 @@ export interface Settings {
 
 export interface ImportPayload {
   version: string;
-  prompts: Array<Partial<Prompt> & { category?: string; tab?: string; optimized?: string }>;
+  prompts: Array<Partial<Prompt> & { category?: string; tab?: string; optimized?: string; description?: string }>;
   categories?: Category[];
   tabs?: WorkspaceTab[];
 }

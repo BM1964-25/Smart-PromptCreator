@@ -11,6 +11,7 @@ export interface AnthropicTestResult {
 
 export interface PromptMetadataSuggestion {
   title?: string;
+  description?: string;
   categoryName: string;
   tags: string[];
 }
@@ -95,6 +96,7 @@ export async function testAnthropicConnection(apiKey: string): Promise<Anthropic
 export async function suggestPromptMetadataWithAnthropic(
   apiKey: string,
   content: string,
+  optimizedContent: string,
   categories: Category[],
   model = testModel
 ): Promise<PromptMetadataSuggestion> {
@@ -122,14 +124,18 @@ export async function suggestPromptMetadataWithAnthropic(
             'Regeln:',
             '- Waehle wenn sinnvoll eine vorhandene Kategorie.',
             '- Wenn keine vorhandene Kategorie passt, schlage eine kurze neue Kategorie vor.',
+            '- Erzeuge eine knappe Beschreibung in einem Satz.',
             '- Erzeuge 3 bis 6 kurze Tags, lowercase, ohne #, keine Duplikate.',
-            '- Optional: kurzer, klarer Titel.',
+            '- Erzeuge einen kurzen, klaren Titel.',
             '',
             'JSON-Format:',
-            '{"title":"...","categoryName":"...","tags":["tag","tag"]}',
+            '{"title":"...","description":"...","categoryName":"...","tags":["tag","tag"]}',
             '',
-            'Prompt:',
-            content
+            'Originalprompt:',
+            content,
+            '',
+            'Optimierter Prompt, falls vorhanden:',
+            optimizedContent || 'Nicht vorhanden'
           ].join('\n')
         }
       ]
@@ -147,6 +153,7 @@ export async function suggestPromptMetadataWithAnthropic(
 
   return {
     title: typeof parsed.title === 'string' ? parsed.title.trim() : undefined,
+    description: typeof parsed.description === 'string' ? parsed.description.trim() : undefined,
     categoryName: typeof parsed.categoryName === 'string' ? parsed.categoryName.trim() : 'Allgemein',
     tags: Array.isArray(parsed.tags)
       ? parsed.tags

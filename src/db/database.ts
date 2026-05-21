@@ -53,6 +53,7 @@ async function seedDatabaseOnce() {
     await db.prompts.add({
       id: crypto.randomUUID(),
       title: 'SEO Blog Prompt',
+      description: 'Prompt fuer einen professionellen SEO-Blogartikel ueber lokale Datensicherheit.',
       content: 'Schreibe einen SEO Artikel über lokale Datensicherheit.',
       optimizedContent:
         'Erstelle einen professionellen, suchmaschinenoptimierten Blogartikel über lokale Datensicherheit. Definiere Zielgruppe, Suchintention, Gliederung, Tonalität, Meta-Daten und konkrete Beispiele.',

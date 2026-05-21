@@ -1,4 +1,4 @@
-import { Copy, Save, Settings2, Sparkles, Star, Tags, Trash2 } from 'lucide-react';
+import { CheckCircle2, Copy, Save, Settings2, Sparkles, Star, Tags, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { db } from '../db/database';
@@ -21,6 +21,7 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
   const [optimizerPreferences, setOptimizerPreferences] = useState<OptimizerPreferences>(defaultOptimizerPreferences);
   const [busy, setBusy] = useState(false);
   const [metadataBusy, setMetadataBusy] = useState(false);
+  const promptDescription = prompt?.description || '';
   const contentStats = getTextStats(prompt?.content || '');
   const optimizedStats = getTextStats(prompt?.optimizedContent || '');
 
@@ -71,14 +72,15 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
     try {
       const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
       if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
-      const suggestion = await suggestPromptMetadataWithAnthropic(apiKey, prompt.content, categories, anthropicModel);
+      const suggestion = await suggestPromptMetadataWithAnthropic(apiKey, prompt.content, prompt.optimizedContent, categories, anthropicModel);
       const category = await findOrCreateCategory(prompt.tabId, suggestion.categoryName);
       await updatePrompt(prompt.id!, {
-        title: suggestion.title || prompt.title,
+        title: shouldReplaceGeneratedTitle(prompt.title) ? suggestion.title || prompt.title : prompt.title,
+        description: promptDescription.trim() ? promptDescription : suggestion.description || '',
         categoryId: category.id,
         tags: Array.from(new Set([...prompt.tags, ...suggestion.tags])).slice(0, 12)
       });
-      toast.success('Kategorie und Tags vorgeschlagen');
+      toast.success('Titel, Beschreibung, Kategorie und Tags vorgeschlagen');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Metadaten-Vorschlag fehlgeschlagen');
     } finally {
@@ -121,6 +123,14 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
       <div className="grid min-h-0 grid-cols-2">
         <section className="flex min-w-0 flex-col border-r border-line dark:border-[#333]">
           <div className="grid gap-3 border-b border-line p-3 dark:border-[#333]">
+            <div className="rounded border border-line bg-white p-3 dark:border-[#333] dark:bg-[#181817]">
+              <div className="grid grid-cols-3 divide-x divide-line rounded border border-line bg-[#f7f7f4] text-xs dark:divide-[#333] dark:border-[#333] dark:bg-[#151515]">
+                <WorkflowStep number="1" title="Prompt" subtitle="Inhalt erfasst" active={Boolean(prompt.content.trim())} />
+                <WorkflowStep number="2" title="Metadaten" subtitle="KI ergänzt" active={Boolean(promptDescription.trim() || prompt.tags.length)} />
+                <WorkflowStep number="3" title="Speichern" subtitle="Eintrag sichern" active={Boolean(prompt.title.trim() && prompt.categoryId)} />
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
               <label className="grid gap-1 text-xs font-medium text-neutral-500">
                 Ziel
@@ -192,6 +202,31 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
               Fehlende Informationen als Rückfragen ergänzen
             </label>
             <div className="grid gap-3 rounded border border-line bg-white p-3 dark:border-[#333] dark:bg-[#181817]">
+              <div>
+                <h2 className="text-sm font-semibold">Metadaten</h2>
+                <p className="text-xs text-neutral-500">Titel, Beschreibung, Kategorie und Tags fuer die Bibliothek.</p>
+              </div>
+              <label className="grid gap-1 text-xs font-medium text-neutral-500">
+                Titel
+                <input
+                  className="field"
+                  value={prompt.title}
+                  onChange={(event) => updatePrompt(prompt.id!, { title: event.target.value })}
+                  placeholder="Kurzer, klarer Titel"
+                />
+              </label>
+              <label className="grid gap-1 text-xs font-medium text-neutral-500">
+                Beschreibung
+                <textarea
+                  className="field min-h-20 resize-none leading-6"
+                  value={promptDescription}
+                  onChange={(event) => updatePrompt(prompt.id!, { description: event.target.value })}
+                  placeholder="Kurze Beschreibung fuer die Prompt-Bibliothek"
+                />
+              </label>
+              <div className="rounded border border-line bg-[#f9f8f3] p-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300">
+                Füllt leere Titel- und Beschreibungsfelder per KI. Kategorie wird vorgeschlagen, Tags werden ergänzt.
+              </div>
               <div className="grid grid-cols-[1fr_auto] gap-2">
                 <label className="grid gap-1 text-xs font-medium text-neutral-500">
                   Kategorie zum Speichern
@@ -211,7 +246,7 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
                   </select>
                 </label>
                 <button className="icon-button self-end" onClick={suggestMetadata} disabled={metadataBusy}>
-                  <Tags size={16} /> {metadataBusy ? 'Analysiert...' : 'KI-Tags'}
+                  <Tags size={16} /> {metadataBusy ? 'Analysiert...' : 'Titel & Metadaten'}
                 </button>
               </div>
 
@@ -328,4 +363,23 @@ function getTextStats(value: string) {
     characters: value.length,
     words: trimmed ? trimmed.split(/\s+/).length : 0
   };
+}
+
+function shouldReplaceGeneratedTitle(title: string) {
+  const normalized = title.trim().toLowerCase();
+  return !normalized || normalized === 'neuer prompt' || normalized.endsWith(' kopie');
+}
+
+function WorkflowStep({ number, title, subtitle, active }: { number: string; title: string; subtitle: string; active?: boolean }) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2">
+      <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold ${active ? 'bg-brand text-white' : 'bg-[#ece8dc] text-neutral-600 dark:bg-[#2b2b29] dark:text-neutral-300'}`}>
+        {active ? <CheckCircle2 size={14} /> : number}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-semibold text-neutral-800 dark:text-neutral-100">{title}</span>
+        <span className="block text-neutral-500">{subtitle}</span>
+      </span>
+    </div>
+  );
 }
