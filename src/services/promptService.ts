@@ -111,7 +111,7 @@ export async function exportLibrary(promptIds?: string[]) {
 
 export async function importLibrary(payload: ImportPayload, conflictMode: 'duplicate' | 'overwrite' = 'duplicate') {
   if (!payload.version || !Array.isArray(payload.prompts)) {
-    throw new Error('Die Importdatei ist keine gueltige Prompt-Bibliothek.');
+    throw new Error('Die Importdatei ist keine gueltige Promptbibliothek.');
   }
 
   await db.transaction('rw', db.tabs, db.categories, db.prompts, async () => {
