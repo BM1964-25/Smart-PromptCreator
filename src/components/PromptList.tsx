@@ -1,4 +1,4 @@
-import { Search, Star } from 'lucide-react';
+import { Search, Star, Trash2 } from 'lucide-react';
 import type { Category, Prompt } from '../types/domain';
 
 interface PromptListProps {
@@ -8,14 +8,15 @@ interface PromptListProps {
   search: string;
   onSearchChange: (value: string) => void;
   onSelect: (id?: string) => void;
+  onDelete: (prompt: Prompt) => void;
 }
 
-export function PromptList({ prompts, categories, selectedId, search, onSearchChange, onSelect }: PromptListProps) {
+export function PromptList({ prompts, categories, selectedId, search, onSearchChange, onSelect, onDelete }: PromptListProps) {
   return (
     <div className="min-w-0 border-r border-line bg-[#f9f8f3] dark:border-[#333] dark:bg-[#1c1c1b]">
       <div className="grid gap-3 border-b border-line px-4 py-3 dark:border-[#333]">
         <div>
-          <h2 className="text-sm font-semibold">Prompts</h2>
+          <h2 className="text-sm font-semibold">Promptbibliothek</h2>
           <p className="text-xs text-neutral-500">{prompts.length} Eintraege · Suche in Titel, Text und Tags</p>
         </div>
         <div className="relative">
@@ -24,7 +25,7 @@ export function PromptList({ prompts, categories, selectedId, search, onSearchCh
             className="h-10 w-full rounded border border-line bg-white pl-9 pr-3 text-sm outline-none focus:border-brand dark:border-[#3a3a38] dark:bg-[#151515]"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Prompts suchen..."
+            placeholder="Promptbibliothek durchsuchen..."
           />
         </div>
       </div>
@@ -32,7 +33,7 @@ export function PromptList({ prompts, categories, selectedId, search, onSearchCh
         {prompts.map((prompt) => {
           const category = categories.find((item) => item.id === prompt.categoryId);
           return (
-            <button
+            <article
               key={prompt.id}
               onClick={() => onSelect(prompt.id)}
               className={`mb-2 w-full rounded border p-3 text-left transition ${
@@ -43,7 +44,19 @@ export function PromptList({ prompts, categories, selectedId, search, onSearchCh
             >
               <div className="flex items-start justify-between gap-3">
                 <h3 className="line-clamp-2 text-sm font-semibold">{prompt.title}</h3>
-                {prompt.favorite && <Star className="shrink-0 fill-amber text-amber" size={15} />}
+                <div className="flex shrink-0 items-center gap-1">
+                  {prompt.favorite && <Star className="fill-amber text-amber" size={15} />}
+                  <button
+                    className="grid h-7 w-7 place-items-center rounded text-neutral-400 transition hover:bg-[#f3ece8] hover:text-[#a33a2d] dark:hover:bg-[#2b1714]"
+                    title="Prompt loeschen"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(prompt);
+                    }}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
               <p className="mt-2 line-clamp-2 text-xs leading-5 text-neutral-500 dark:text-neutral-400">
                 {prompt.description || prompt.content || 'Noch kein Inhalt'}
@@ -60,7 +73,7 @@ export function PromptList({ prompts, categories, selectedId, search, onSearchCh
                   </span>
                 ))}
               </div>
-            </button>
+            </article>
           );
         })}
       </div>

@@ -1,7 +1,6 @@
 import { CheckCircle2, Copy, Save, Settings2, Sparkles, Star, Tags, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { db } from '../db/database';
 import { optimizeWithAnthropic, suggestPromptMetadataWithAnthropic } from '../services/anthropicService';
 import { defaultOptimizerPreferences, optimizeLocally } from '../services/optimizerService';
 import { duplicatePrompt, findOrCreateCategory, updatePrompt } from '../services/promptService';
@@ -12,9 +11,10 @@ interface PromptEditorProps {
   prompt?: Prompt;
   settings?: Settings;
   categories: Category[];
+  onDelete: (prompt: Prompt) => void;
 }
 
-export function PromptEditor({ prompt, settings, categories }: PromptEditorProps) {
+export function PromptEditor({ prompt, settings, categories, onDelete }: PromptEditorProps) {
   const [provider, setProvider] = useState<AiProvider>('anthropic');
   const [anthropicModel, setAnthropicModel] = useState(settings?.anthropicModel || 'claude-3-5-haiku-latest');
   const [showExpertOptions, setShowExpertOptions] = useState(false);
@@ -26,7 +26,7 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
   const optimizedStats = getTextStats(prompt?.optimizedContent || '');
 
   if (!prompt) {
-    return <div className="grid place-items-center text-sm text-neutral-500">Erstelle oder importiere einen Prompt.</div>;
+    return <div className="grid place-items-center text-sm text-neutral-500">Erstelle oder importiere einen Eintrag in der Promptbibliothek.</div>;
   }
 
   async function optimize() {
@@ -114,7 +114,7 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
           <button className="icon-only" title="Speichern">
             <Save size={17} />
           </button>
-          <button className="icon-only" title="Loeschen" onClick={() => db.prompts.delete(prompt.id!)}>
+          <button className="icon-only" title="Loeschen" onClick={() => onDelete(prompt)}>
             <Trash2 size={17} />
           </button>
         </div>
@@ -221,7 +221,7 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
                   className="field min-h-20 resize-y leading-6"
                   value={promptDescription}
                   onChange={(event) => updatePrompt(prompt.id!, { description: event.target.value })}
-                  placeholder="Kurze Beschreibung fuer die Prompt-Bibliothek"
+                  placeholder="Kurze Beschreibung fuer die Promptbibliothek"
                 />
               </label>
               <div className="rounded border border-line bg-[#f9f8f3] p-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300">

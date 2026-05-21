@@ -32,7 +32,7 @@ import { PromptList } from './components/PromptList';
 import { PromptEditor } from './components/PromptEditor';
 import { SettingsPanel } from './components/SettingsPanel';
 import { CategoryNav } from './components/CategoryNav';
-import type { WorkspaceTab } from './types/domain';
+import type { Prompt, WorkspaceTab } from './types/domain';
 
 export default function App() {
   const [showSettings, setShowSettings] = useState(false);
@@ -88,6 +88,18 @@ export default function App() {
     await Promise.all(ordered.map((tab, position) => db.tabs.update(tab.id!, { position })));
   }
 
+  async function deletePrompt(prompt: Prompt) {
+    if (!prompt.id) return;
+    const confirmed = window.confirm(`Soll "${prompt.title}" wirklich aus der Promptbibliothek geloescht werden?`);
+    if (!confirmed) return;
+
+    await db.prompts.delete(prompt.id);
+    const remainingPrompts = (prompts || []).filter((item) => item.id !== prompt.id);
+    const nextPrompt = remainingPrompts[0];
+    store.setSelectedPrompt(nextPrompt?.id);
+    toast.success('Eintrag geloescht');
+  }
+
   return (
     <main className="flex h-screen bg-[#ebe8df] text-ink dark:bg-[#171717] dark:text-[#f3f0e8]">
       <aside
@@ -110,7 +122,7 @@ export default function App() {
             {!sidebarCollapsed && (
             <div className="min-w-0 flex-1">
               <h1 className="text-base font-semibold">Smart Prompt Creator</h1>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Lokale Prompt-Bibliothek</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">Lokale Promptbibliothek</p>
             </div>
             )}
           </div>
@@ -217,7 +229,7 @@ export default function App() {
                   <StatusRow icon={<KeyRound size={14} />} label="Lizenz" value={licenseStatus === 'active' ? 'Aktiv' : 'Nicht aktiviert'} active={licenseStatus === 'active'} />
                   <StatusRow icon={<Sparkles size={14} />} label="Anthropic" value={anthropicReady ? 'Konfiguriert' : 'API-Key fehlt'} active={anthropicReady} />
                   <StatusRow icon={<HardDrive size={14} />} label="Speicher" value="IndexedDB lokal" active />
-                  <StatusRow icon={<FileText size={14} />} label="Prompts" value={`${prompts?.length || 0}`} active />
+                  <StatusRow icon={<FileText size={14} />} label="Promptbibliothek" value={`${prompts?.length || 0}`} active />
                 </div>
               </div>
 
@@ -245,8 +257,9 @@ export default function App() {
           search={store.search}
           onSearchChange={store.setSearch}
           onSelect={store.setSelectedPrompt}
+          onDelete={deletePrompt}
         />
-        <PromptEditor prompt={selectedPrompt} settings={settings} categories={categories || []} />
+        <PromptEditor prompt={selectedPrompt} settings={settings} categories={categories || []} onDelete={deletePrompt} />
       </section>
 
       {showSettings && <SettingsPanel settings={settings} onClose={() => setShowSettings(false)} />}
