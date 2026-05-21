@@ -13,6 +13,8 @@ import {
   KeyRound,
   Library,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Search,
   Settings,
@@ -192,9 +194,18 @@ export default function App() {
             onSelect={store.setActiveCategory}
             onCreate={() => store.activeTabId && createCategory(store.activeTabId)}
             collapsed={sidebarCollapsed}
-            onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
           />
         </nav>
+
+        <div className={`px-3 pb-3 ${sidebarCollapsed ? 'flex justify-center' : 'flex justify-end'}`}>
+          <button
+            className="icon-only"
+            title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+            onClick={() => setSidebarCollapsed((current) => !current)}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
+        </div>
 
         <div className="space-y-3 border-t border-line p-3 dark:border-[#333]">
           <div className={`grid gap-2 ${sidebarCollapsed ? 'grid-cols-1' : 'grid-cols-4'}`}>
