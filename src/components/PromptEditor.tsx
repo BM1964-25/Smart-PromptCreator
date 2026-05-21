@@ -120,8 +120,8 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
         </div>
       </header>
 
-      <div className="grid min-h-0 grid-cols-2">
-        <section className="flex min-w-0 flex-col border-r border-line dark:border-[#333]">
+      <div className="grid min-h-0 grid-cols-2 overflow-hidden">
+        <section className="min-h-0 min-w-0 overflow-y-auto border-r border-line dark:border-[#333]">
           <div className="grid gap-3 border-b border-line p-3 dark:border-[#333]">
             <div className="rounded border border-line bg-white p-3 dark:border-[#333] dark:bg-[#181817]">
               <div className="grid grid-cols-3 divide-x divide-line rounded border border-line bg-[#f7f7f4] text-xs dark:divide-[#333] dark:border-[#333] dark:bg-[#151515]">
@@ -218,7 +218,7 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
               <label className="grid gap-1 text-xs font-medium text-neutral-500">
                 Beschreibung
                 <textarea
-                  className="field min-h-20 resize-none leading-6"
+                  className="field min-h-20 resize-y leading-6"
                   value={promptDescription}
                   onChange={(event) => updatePrompt(prompt.id!, { description: event.target.value })}
                   placeholder="Kurze Beschreibung fuer die Prompt-Bibliothek"
@@ -282,7 +282,7 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
               </div>
             </div>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col p-4">
+          <div className="flex min-h-0 flex-col p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold">Eingabe</h2>
@@ -295,13 +295,13 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
             <textarea
               value={prompt.content}
               onChange={(event) => updatePrompt(prompt.id!, { content: event.target.value })}
-              className="min-h-0 flex-1 resize-none rounded border border-line bg-[#fffefa] p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:bg-white focus:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:text-[#f3f0e8] dark:focus:bg-[#151515]"
+              className="h-[360px] min-h-56 resize-y rounded border border-line bg-[#fffefa] p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:bg-white focus:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:text-[#f3f0e8] dark:focus:bg-[#151515]"
               placeholder="Beschreibe hier, was die KI tun soll..."
             />
           </div>
         </section>
 
-        <section className="flex min-w-0 flex-col">
+        <section className="min-h-0 min-w-0 overflow-y-auto">
           <div className="grid gap-2 border-b border-line p-3 dark:border-[#333]">
             <div className="flex items-center gap-2">
               <button className="icon-button" onClick={() => setShowExpertOptions((current) => !current)}>
@@ -329,7 +329,7 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
               </div>
             )}
           </div>
-          <div className="flex min-h-0 flex-1 flex-col bg-[#faf8f1] p-4 dark:bg-[#171716]">
+          <div className="flex min-h-0 flex-col bg-[#faf8f1] p-4 dark:bg-[#171716]">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold">Optimierte Ausgabe</h2>
@@ -347,7 +347,7 @@ export function PromptEditor({ prompt, settings, categories }: PromptEditorProps
             <textarea
               value={prompt.optimizedContent}
               onChange={(event) => updatePrompt(prompt.id!, { optimizedContent: event.target.value })}
-              className="min-h-0 flex-1 resize-none rounded border border-line bg-white p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:shadow-soft dark:border-[#333] dark:bg-[#111] dark:text-[#f3f0e8]"
+              className="h-[calc(100vh-255px)] min-h-80 resize-y rounded border border-line bg-white p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:shadow-soft dark:border-[#333] dark:bg-[#111] dark:text-[#f3f0e8]"
               placeholder="Hier erscheint die optimierte Version..."
             />
           </div>
