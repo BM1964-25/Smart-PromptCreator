@@ -240,9 +240,9 @@ export default function App() {
           />
         </nav>
 
-        <div className={`px-3 pb-3 ${sidebarCollapsed ? 'flex justify-center' : 'flex justify-start'}`}>
+        <div className={`px-3 pb-3 ${sidebarCollapsed ? 'flex justify-center' : 'grid grid-cols-4 gap-2'}`}>
           <button
-            className="icon-only"
+            className={sidebarCollapsed ? 'icon-only' : 'icon-only col-start-4'}
             title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
             onClick={() => setSidebarCollapsed((current) => !current)}
           >
