@@ -91,12 +91,19 @@ export default function App() {
   return (
     <main className="flex h-screen bg-[#ebe8df] text-ink dark:bg-[#171717] dark:text-[#f3f0e8]">
       <aside
-        className={`flex shrink-0 flex-col border-r border-line bg-panel transition-[width] duration-200 dark:border-[#333] dark:bg-[#20201f] ${
+        className={`relative flex shrink-0 flex-col border-r border-line bg-panel transition-[width] duration-200 dark:border-[#333] dark:bg-[#20201f] ${
           sidebarCollapsed ? 'w-20' : 'w-80'
         }`}
       >
-        <div className="border-b border-line p-4 dark:border-[#333]">
-          <div className="flex items-center gap-3">
+        <button
+          className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded border border-line bg-white text-neutral-600 transition hover:border-brand hover:text-brand dark:border-[#3a3a38] dark:bg-[#151515] dark:text-neutral-300"
+          title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+          onClick={() => setSidebarCollapsed((current) => !current)}
+        >
+          {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+        </button>
+        <div className={`border-b border-line p-4 dark:border-[#333] ${sidebarCollapsed ? 'pt-12' : ''}`}>
+          <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center pr-0' : 'pr-10'}`}>
             <div className="grid h-9 w-9 place-items-center rounded bg-brand text-white">
               <Sparkles size={18} />
             </div>
@@ -106,13 +113,6 @@ export default function App() {
               <p className="text-xs text-neutral-500 dark:text-neutral-400">Lokale Prompt-Bibliothek</p>
             </div>
             )}
-            <button
-              className="icon-only"
-              title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
-              onClick={() => setSidebarCollapsed((current) => !current)}
-            >
-              {sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
-            </button>
           </div>
         </div>
 
