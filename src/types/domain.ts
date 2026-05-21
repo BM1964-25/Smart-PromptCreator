@@ -4,7 +4,7 @@ export type OptimizerAudience = 'general' | 'beginner' | 'expert' | 'customer' |
 export type OptimizerTone = 'precise' | 'professional' | 'creative' | 'concise' | 'detailed' | 'persuasive';
 export type OptimizerFormat = 'markdown' | 'list' | 'table' | 'json' | 'steps' | 'freeform';
 export type OptimizerStrength = 'fast' | 'balanced' | 'premium';
-export type AiProvider = 'local' | 'openai' | 'anthropic' | 'ollama';
+export type AiProvider = 'anthropic' | 'local';
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type LicenseStatus = 'inactive' | 'active' | 'grace' | 'expired';
 
@@ -57,13 +57,12 @@ export interface WorkspaceTab {
 export interface Settings {
   id: 'app';
   apiKeys: {
-    openai?: string;
     anthropic?: string;
     license?: string;
   };
   theme: ThemeMode;
   language: 'de' | 'en';
-  defaultModel: string;
+  anthropicModel: string;
   license: {
     key?: string;
     token?: string;

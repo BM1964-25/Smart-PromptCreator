@@ -59,7 +59,6 @@ export default function App() {
 
   const selectedPrompt = prompts?.find((prompt) => prompt.id === store.selectedPromptId) || visiblePrompts[0];
   const licenseStatus = settings?.license.status || 'inactive';
-  const openAiReady = Boolean(settings?.apiKeys.openai);
   const anthropicReady = Boolean(settings?.apiKeys.anthropic);
 
   async function handleExport() {
@@ -216,7 +215,7 @@ export default function App() {
                 </div>
                 <div className="space-y-2">
                   <StatusRow icon={<KeyRound size={14} />} label="Lizenz" value={licenseStatus === 'active' ? 'Aktiv' : 'Nicht aktiviert'} active={licenseStatus === 'active'} />
-                  <StatusRow icon={<Sparkles size={14} />} label="KI/API" value={openAiReady || anthropicReady ? 'Konfiguriert' : 'Lokal'} active={openAiReady || anthropicReady} />
+                  <StatusRow icon={<Sparkles size={14} />} label="Anthropic" value={anthropicReady ? 'Konfiguriert' : 'API-Key fehlt'} active={anthropicReady} />
                   <StatusRow icon={<HardDrive size={14} />} label="Speicher" value="IndexedDB lokal" active />
                   <StatusRow icon={<FileText size={14} />} label="Prompts" value={`${prompts?.length || 0}`} active />
                 </div>

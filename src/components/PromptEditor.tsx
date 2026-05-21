@@ -3,8 +3,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { db } from '../db/database';
 import { optimizeWithAnthropic } from '../services/anthropicService';
-import { defaultOptimizerPreferences, optimizeLocally, optimizeWithOpenAI } from '../services/openaiService';
-import { optimizeWithOllama } from '../services/ollamaService';
+import { defaultOptimizerPreferences, optimizeLocally } from '../services/optimizerService';
 import { duplicatePrompt, updatePrompt } from '../services/promptService';
 import type { AiProvider, OptimizerPreferences, Prompt, Settings } from '../types/domain';
 import { decryptSecret } from '../utils/crypto';
@@ -15,10 +14,8 @@ interface PromptEditorProps {
 }
 
 export function PromptEditor({ prompt, settings }: PromptEditorProps) {
-  const [provider, setProvider] = useState<AiProvider>('local');
-  const [openAiModel, setOpenAiModel] = useState(settings?.defaultModel || 'gpt-4.1-mini');
-  const [anthropicModel, setAnthropicModel] = useState('claude-3-5-haiku-latest');
-  const [ollamaModel, setOllamaModel] = useState('llama3');
+  const [provider, setProvider] = useState<AiProvider>('anthropic');
+  const [anthropicModel, setAnthropicModel] = useState(settings?.anthropicModel || 'claude-3-5-haiku-latest');
   const [showExpertOptions, setShowExpertOptions] = useState(false);
   const [optimizerPreferences, setOptimizerPreferences] = useState<OptimizerPreferences>(defaultOptimizerPreferences);
   const [busy, setBusy] = useState(false);
@@ -34,16 +31,10 @@ export function PromptEditor({ prompt, settings }: PromptEditorProps) {
     setBusy(true);
     try {
       let optimized = '';
-      if (provider === 'openai') {
-        const apiKey = await decryptSecret(settings?.apiKeys.openai);
-        if (!apiKey) throw new Error('OpenAI API-Key fehlt.');
-        optimized = await optimizeWithOpenAI(apiKey, prompt.content, optimizerPreferences, openAiModel);
-      } else if (provider === 'anthropic') {
+      if (provider === 'anthropic') {
         const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
         if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
         optimized = await optimizeWithAnthropic(apiKey, prompt.content, optimizerPreferences, anthropicModel);
-      } else if (provider === 'ollama') {
-        optimized = await optimizeWithOllama(ollamaModel, prompt.content, optimizerPreferences);
       } else {
         optimized = optimizeLocally(prompt.content, optimizerPreferences);
       }
@@ -208,28 +199,14 @@ export function PromptEditor({ prompt, settings }: PromptEditorProps) {
                 <label className="grid gap-1 text-xs font-medium text-neutral-500">
                   Anbieter
                   <select className="field" value={provider} onChange={(event) => setProvider(event.target.value as AiProvider)}>
-                    <option value="local">Lokal</option>
-                    <option value="openai">OpenAI</option>
                     <option value="anthropic">Anthropic</option>
-                    <option value="ollama">Ollama</option>
+                    <option value="local">Lokale Vorlage</option>
                   </select>
                 </label>
-                {provider === 'openai' && (
-                  <label className="grid gap-1 text-xs font-medium text-neutral-500">
-                    Modell
-                    <input className="field" value={openAiModel} onChange={(event) => setOpenAiModel(event.target.value)} />
-                  </label>
-                )}
                 {provider === 'anthropic' && (
                   <label className="grid gap-1 text-xs font-medium text-neutral-500">
-                    Modell
+                    Anthropic Modell
                     <input className="field" value={anthropicModel} onChange={(event) => setAnthropicModel(event.target.value)} />
-                  </label>
-                )}
-                {provider === 'ollama' && (
-                  <label className="grid gap-1 text-xs font-medium text-neutral-500">
-                    Lokales Modell
-                    <input className="field" value={ollamaModel} onChange={(event) => setOllamaModel(event.target.value)} />
                   </label>
                 )}
               </div>

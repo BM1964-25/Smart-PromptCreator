@@ -1,13 +1,11 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { db } from '../db/database';
-import { checkOllama } from '../services/ollamaService';
 import { validateLicense } from '../services/licenseService';
 import { AnthropicApiKeyManager } from './AnthropicApiKeyManager';
 import type { Settings } from '../types/domain';
 import type { ThemeMode } from '../types/domain';
-import { encryptSecret } from '../utils/crypto';
+import { db } from '../db/database';
 
 interface SettingsPanelProps {
   settings?: Settings;
@@ -15,25 +13,12 @@ interface SettingsPanelProps {
 }
 
 export function SettingsPanel({ settings, onClose }: SettingsPanelProps) {
-  const [apiKey, setApiKey] = useState('');
   const [licenseKey, setLicenseKey] = useState(settings?.license.key || '');
   const [licenseEndpoint, setLicenseEndpoint] = useState('http://127.0.0.1:8787');
-  const [ollamaStatus, setOllamaStatus] = useState<string>();
-
-  async function saveApiKey() {
-    await db.settings.update('app', { apiKeys: { ...settings?.apiKeys, openai: await encryptSecret(apiKey) } });
-    setApiKey('');
-    toast.success('API-Key lokal verschluesselt gespeichert');
-  }
 
   async function activateLicense() {
     const result = await validateLicense(licenseKey, licenseEndpoint);
     toast.success(result.valid ? 'Lizenz aktiviert' : 'Lizenz ungueltig');
-  }
-
-  async function probeOllama() {
-    const result = await checkOllama();
-    setOllamaStatus(result.available ? `Aktiv: ${result.models.join(', ') || 'keine Modelle gefunden'}` : 'Nicht erreichbar');
   }
 
   return (
@@ -57,23 +42,7 @@ export function SettingsPanel({ settings, onClose }: SettingsPanelProps) {
             </select>
           </section>
 
-          <section>
-            <h3 className="mb-2 text-sm font-semibold">OpenAI</h3>
-            <div className="flex gap-2">
-              <input className="field" type="password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="sk-..." />
-              <button className="icon-button" onClick={saveApiKey}>Speichern</button>
-            </div>
-          </section>
-
           <AnthropicApiKeyManager settings={settings} />
-
-          <section>
-            <h3 className="mb-2 text-sm font-semibold">Ollama</h3>
-            <div className="flex items-center gap-3">
-              <button className="icon-button" onClick={probeOllama}>Pruefen</button>
-              <span className="text-sm text-neutral-500">{ollamaStatus}</span>
-            </div>
-          </section>
 
           <section>
             <h3 className="mb-2 text-sm font-semibold">Lizenz</h3>

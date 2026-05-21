@@ -1,5 +1,5 @@
 import type { OptimizerPreferences } from '../types/domain';
-import { buildOptimizationPrompt } from './openaiService';
+import { buildOptimizationPrompt } from './optimizerService';
 
 const anthropicVersion = '2023-06-01';
 const testModel = 'claude-3-5-haiku-latest';

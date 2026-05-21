@@ -8,7 +8,7 @@ Lokale Desktop-App zur Verwaltung, Optimierung und Organisation von KI-Prompts.
 - React, TypeScript, Vite
 - TailwindCSS
 - IndexedDB mit Dexie.js
-- OpenAI API und optional Ollama
+- Anthropic API fuer Prompt-Optimierung
 - kleines Node/Express Backend fuer Stripe Checkout und Lizenzvalidierung
 
 ## Entwicklung
@@ -33,7 +33,7 @@ npm run license:dev
 
 ## Datenschutz
 
-Prompts, Kategorien, Tabs, Einstellungen und verschluesselte API-Keys bleiben lokal in IndexedDB. Netzwerkzugriffe passieren nur bei expliziter OpenAI-, Ollama- oder Lizenzaktion. Es gibt keine Cloud-Datenbank und keine Telemetrie.
+Prompts, Kategorien, Tabs, Einstellungen und der verschluesselte Anthropic API-Key bleiben lokal in IndexedDB. Netzwerkzugriffe passieren nur bei expliziter Anthropic-Optimierung oder Lizenzaktion. Es gibt keine Cloud-Datenbank und keine Telemetrie.
 
 ## Importformat
 

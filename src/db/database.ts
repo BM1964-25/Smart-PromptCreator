@@ -71,7 +71,7 @@ async function seedDatabaseOnce() {
       apiKeys: {},
       theme: 'system',
       language: 'de',
-      defaultModel: 'gpt-4.1-mini',
+      anthropicModel: 'claude-3-5-haiku-latest',
       license: { status: 'inactive' },
       backup: { autoBackup: false }
     });

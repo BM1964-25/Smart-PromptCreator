@@ -80,35 +80,6 @@ export function buildOptimizationPrompt(content: string, preferences: OptimizerP
   ].join('\n');
 }
 
-export async function optimizeWithOpenAI(apiKey: string, content: string, preferences: OptimizerPreferences, model = 'gpt-4.1-mini') {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model,
-      temperature: preferences.strength === 'premium' ? 0.5 : 0.35,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'Du bist ein professioneller Prompt Engineer. Antworte nur mit dem optimierten Prompt, ohne Vorrede.'
-        },
-        {
-          role: 'user',
-          content: buildOptimizationPrompt(content, preferences)
-        }
-      ]
-    })
-  });
-
-  if (!response.ok) throw new Error(`OpenAI Anfrage fehlgeschlagen (${response.status}).`);
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content?.trim() || '';
-}
-
 export function optimizeLocally(content: string, preferences: OptimizerPreferences) {
   return [
     `Rolle: Du bist ein erfahrener Prompt Engineer fuer ${goalLabels[preferences.goal]}.`,
