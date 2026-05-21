@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Trash2,
   Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -32,7 +33,7 @@ import { PromptList } from './components/PromptList';
 import { PromptEditor } from './components/PromptEditor';
 import { SettingsPanel } from './components/SettingsPanel';
 import { CategoryNav } from './components/CategoryNav';
-import type { Prompt, WorkspaceTab } from './types/domain';
+import type { Category, Prompt, WorkspaceTab } from './types/domain';
 
 export default function App() {
   const [showSettings, setShowSettings] = useState(false);
@@ -98,6 +99,41 @@ export default function App() {
     const nextPrompt = remainingPrompts[0];
     store.setSelectedPrompt(nextPrompt?.id);
     toast.success('Eintrag geloescht');
+  }
+
+  async function deleteTab(tab: WorkspaceTab) {
+    if (!tab.id) return;
+    const confirmed = window.confirm(`Soll der Tab "${tab.name}" wirklich geloescht werden? Prompts bleiben erhalten und werden aus diesem Tab geloest.`);
+    if (!confirmed) return;
+
+    const remainingTabs = (tabs || []).filter((item) => item.id !== tab.id);
+    await db.transaction('rw', db.tabs, db.categories, db.prompts, async () => {
+      await db.tabs.delete(tab.id!);
+      await db.categories.where({ tabId: tab.id }).delete();
+      const tabPrompts = await db.prompts.where({ tabId: tab.id }).toArray();
+      await Promise.all(tabPrompts.map((prompt) => db.prompts.update(prompt.id!, { tabId: '', categoryId: '' })));
+    });
+
+    if (store.activeTabId === tab.id) {
+      store.setActiveTab(remainingTabs[0]?.id);
+      store.setActiveCategory(undefined);
+    }
+    toast.success('Tab geloescht');
+  }
+
+  async function deleteCategory(category: Category) {
+    if (!category.id) return;
+    const confirmed = window.confirm(`Soll die Kategorie "${category.name}" wirklich geloescht werden? Prompts bleiben erhalten.`);
+    if (!confirmed) return;
+
+    await db.transaction('rw', db.categories, db.prompts, async () => {
+      await db.categories.delete(category.id!);
+      const categoryPrompts = await db.prompts.where({ categoryId: category.id }).toArray();
+      await Promise.all(categoryPrompts.map((prompt) => db.prompts.update(prompt.id!, { categoryId: '' })));
+    });
+
+    if (store.activeCategoryId === category.id) store.setActiveCategory(undefined);
+    toast.success('Kategorie geloescht');
   }
 
   return (
@@ -181,7 +217,13 @@ export default function App() {
                 <SortableContext items={(tabs || []).map((tab) => tab.id!)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-1">
                     {tabs?.map((tab) => (
-                      <SortableTab key={tab.id} tab={tab} active={store.activeTabId === tab.id} onSelect={() => store.setActiveTab(tab.id)} />
+                      <SortableTab
+                        key={tab.id}
+                        tab={tab}
+                        active={store.activeTabId === tab.id}
+                        onSelect={() => store.setActiveTab(tab.id)}
+                        onDelete={() => deleteTab(tab)}
+                      />
                     ))}
                   </div>
                 </SortableContext>
@@ -193,6 +235,7 @@ export default function App() {
             activeCategoryId={store.activeCategoryId}
             onSelect={store.setActiveCategory}
             onCreate={() => store.activeTabId && createCategory(store.activeTabId)}
+            onDelete={deleteCategory}
             collapsed={sidebarCollapsed}
           />
         </nav>
@@ -269,15 +312,37 @@ export default function App() {
   );
 }
 
-function SortableTab({ tab, active, onSelect }: { tab: WorkspaceTab; active: boolean; onSelect: () => void }) {
+function SortableTab({
+  tab,
+  active,
+  onSelect,
+  onDelete
+}: {
+  tab: WorkspaceTab;
+  active: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: tab.id! });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
-    <button ref={setNodeRef} style={style} {...attributes} {...listeners} onClick={onSelect} className={`nav-row ${active ? 'active' : ''}`}>
-      <Folder className="mr-2 shrink-0 text-neutral-500" size={16} />
-      {tab.name}
-    </button>
+    <div ref={setNodeRef} style={style} className="group flex items-center gap-1">
+      <button {...attributes} {...listeners} onClick={onSelect} className={`nav-row min-w-0 flex-1 ${active ? 'active' : ''}`}>
+        <Folder className="mr-2 shrink-0 text-neutral-500" size={16} />
+        <span className="truncate">{tab.name}</span>
+      </button>
+      <button
+        className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 opacity-0 transition hover:bg-[#f3ece8] hover:text-[#a33a2d] group-hover:opacity-100 focus:opacity-100 dark:hover:bg-[#2b1714]"
+        title="Tab loeschen"
+        onClick={(event) => {
+          event.stopPropagation();
+          onDelete();
+        }}
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
   );
 }
 

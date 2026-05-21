@@ -1,4 +1,4 @@
-import { FolderOpen, Plus } from 'lucide-react';
+import { FolderOpen, Plus, Trash2 } from 'lucide-react';
 import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -10,10 +10,11 @@ interface CategoryNavProps {
   activeCategoryId?: string;
   onSelect: (id?: string) => void;
   onCreate: () => void;
+  onDelete: (category: Category) => void;
   collapsed?: boolean;
 }
 
-export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, collapsed }: CategoryNavProps) {
+export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, onDelete, collapsed }: CategoryNavProps) {
   async function reorderCategories(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -45,6 +46,7 @@ export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, 
               category={category}
               active={activeCategoryId === category.id}
               onSelect={() => onSelect(category.id)}
+              onDelete={() => onDelete(category)}
             />
           ))}
         </SortableContext>
@@ -53,14 +55,36 @@ export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, 
   );
 }
 
-function SortableCategory({ category, active, onSelect }: { category: Category; active: boolean; onSelect: () => void }) {
+function SortableCategory({
+  category,
+  active,
+  onSelect,
+  onDelete
+}: {
+  category: Category;
+  active: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: category.id! });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
-    <button ref={setNodeRef} style={style} {...attributes} {...listeners} className={`nav-row ${active ? 'active' : ''}`} onClick={onSelect}>
-      <span className="mr-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: category.color }} />
-      {category.name}
-    </button>
+    <div ref={setNodeRef} style={style} className="group flex items-center gap-1">
+      <button {...attributes} {...listeners} className={`nav-row min-w-0 flex-1 ${active ? 'active' : ''}`} onClick={onSelect}>
+        <span className="mr-2 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: category.color }} />
+        <span className="truncate">{category.name}</span>
+      </button>
+      <button
+        className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 opacity-0 transition hover:bg-[#f3ece8] hover:text-[#a33a2d] group-hover:opacity-100 focus:opacity-100 dark:hover:bg-[#2b1714]"
+        title="Kategorie loeschen"
+        onClick={(event) => {
+          event.stopPropagation();
+          onDelete();
+        }}
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
   );
 }
