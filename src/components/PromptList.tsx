@@ -43,7 +43,7 @@ export function PromptList({ prompts, categories, selectedId, search, onSearchCh
               }`}
             >
               <div className="flex items-start justify-between gap-3">
-                <h3 className="line-clamp-2 text-sm font-semibold">{prompt.title}</h3>
+                <h3 className="line-clamp-2 text-xl font-semibold tracking-normal">{prompt.title}</h3>
                 <div className="flex shrink-0 items-center gap-1">
                   {prompt.favorite && <Star className="fill-amber text-amber" size={15} />}
                   <button
