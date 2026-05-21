@@ -22,6 +22,8 @@ export function PromptEditor({ prompt, settings }: PromptEditorProps) {
   const [showExpertOptions, setShowExpertOptions] = useState(false);
   const [optimizerPreferences, setOptimizerPreferences] = useState<OptimizerPreferences>(defaultOptimizerPreferences);
   const [busy, setBusy] = useState(false);
+  const contentStats = getTextStats(prompt?.content || '');
+  const optimizedStats = getTextStats(prompt?.optimizedContent || '');
 
   if (!prompt) {
     return <div className="grid place-items-center text-sm text-neutral-500">Erstelle oder importiere einen Prompt.</div>;
@@ -56,6 +58,13 @@ export function PromptEditor({ prompt, settings }: PromptEditorProps) {
 
   function updateOptimizerPreference<Key extends keyof OptimizerPreferences>(key: Key, value: OptimizerPreferences[Key]) {
     setOptimizerPreferences((current) => ({ ...current, [key]: value }));
+  }
+
+  async function copyOptimizedContent() {
+    if (!prompt) return;
+    if (!prompt.optimizedContent.trim()) return;
+    await navigator.clipboard.writeText(prompt.optimizedContent);
+    toast.success('Optimierte Version kopiert');
   }
 
   return (
@@ -165,12 +174,23 @@ export function PromptEditor({ prompt, settings }: PromptEditorProps) {
               placeholder="Tags"
             />
           </div>
-          <textarea
-            value={prompt.content}
-            onChange={(event) => updatePrompt(prompt.id!, { content: event.target.value })}
-            className="min-h-0 flex-1 resize-none bg-transparent p-5 text-sm leading-7 outline-none"
-            placeholder="Ausgangsprompt..."
-          />
+          <div className="flex min-h-0 flex-1 flex-col p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold">Eingabe</h2>
+                <p className="text-xs text-neutral-500">Originalprompt oder Rohidee</p>
+              </div>
+              <span className="rounded bg-[#ece8dc] px-2 py-1 text-xs text-neutral-600 dark:bg-[#2b2b29] dark:text-neutral-300">
+                {contentStats.words} Wörter · {contentStats.characters} Zeichen
+              </span>
+            </div>
+            <textarea
+              value={prompt.content}
+              onChange={(event) => updatePrompt(prompt.id!, { content: event.target.value })}
+              className="min-h-0 flex-1 resize-none rounded border border-line bg-[#fffefa] p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:bg-white focus:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:text-[#f3f0e8] dark:focus:bg-[#151515]"
+              placeholder="Beschreibe hier, was die KI tun soll..."
+            />
+          </div>
         </section>
 
         <section className="flex min-w-0 flex-col">
@@ -179,9 +199,9 @@ export function PromptEditor({ prompt, settings }: PromptEditorProps) {
               <button className="icon-button" onClick={() => setShowExpertOptions((current) => !current)}>
                 <Settings2 size={16} /> Expertenmodus
               </button>
-            <button className="icon-button ml-auto" onClick={optimize} disabled={busy}>
-              <Sparkles size={16} /> {busy ? 'Optimiert...' : 'Optimieren'}
-            </button>
+              <button className="icon-button ml-auto" onClick={optimize} disabled={busy}>
+                <Sparkles size={16} /> {busy ? 'Optimiert...' : 'Optimieren'}
+              </button>
             </div>
             {showExpertOptions && (
               <div className="grid grid-cols-2 gap-2 rounded border border-line bg-white p-3 dark:border-[#3a3a38] dark:bg-[#181817]">
@@ -215,14 +235,38 @@ export function PromptEditor({ prompt, settings }: PromptEditorProps) {
               </div>
             )}
           </div>
-          <textarea
-            value={prompt.optimizedContent}
-            onChange={(event) => updatePrompt(prompt.id!, { optimizedContent: event.target.value })}
-            className="min-h-0 flex-1 resize-none bg-transparent p-5 text-sm leading-7 outline-none"
-            placeholder="Optimierte Version..."
-          />
+          <div className="flex min-h-0 flex-1 flex-col bg-[#faf8f1] p-4 dark:bg-[#171716]">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold">Optimierte Ausgabe</h2>
+                <p className="text-xs text-neutral-500">Direkt kopierbarer Zielprompt</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-[#e3f1ed] px-2 py-1 text-xs text-brand dark:bg-[#123a34]">
+                  {optimizedStats.words} Wörter · {optimizedStats.characters} Zeichen
+                </span>
+                <button className="icon-only" title="Optimierte Version kopieren" onClick={copyOptimizedContent} disabled={!prompt.optimizedContent.trim()}>
+                  <Copy size={16} />
+                </button>
+              </div>
+            </div>
+            <textarea
+              value={prompt.optimizedContent}
+              onChange={(event) => updatePrompt(prompt.id!, { optimizedContent: event.target.value })}
+              className="min-h-0 flex-1 resize-none rounded border border-line bg-white p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:shadow-soft dark:border-[#333] dark:bg-[#111] dark:text-[#f3f0e8]"
+              placeholder="Hier erscheint die optimierte Version..."
+            />
+          </div>
         </section>
       </div>
     </div>
   );
+}
+
+function getTextStats(value: string) {
+  const trimmed = value.trim();
+  return {
+    characters: value.length,
+    words: trimmed ? trimmed.split(/\s+/).length : 0
+  };
 }
