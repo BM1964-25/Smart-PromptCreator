@@ -1,4 +1,4 @@
-import { FolderOpen, Plus } from 'lucide-react';
+import { FolderOpen, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
 import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -11,9 +11,10 @@ interface CategoryNavProps {
   onSelect: (id?: string) => void;
   onCreate: () => void;
   collapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate }: CategoryNavProps) {
+export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, collapsed, onToggleSidebar }: CategoryNavProps) {
   async function reorderCategories(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -21,6 +22,18 @@ export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate }
     const newIndex = categories.findIndex((category) => category.id === over.id);
     const ordered = arrayMove(categories, oldIndex, newIndex);
     await Promise.all(ordered.map((category, position) => db.categories.update(category.id!, { position })));
+  }
+
+  if (collapsed) {
+    return (
+      <div className="mt-6 flex justify-center">
+        {onToggleSidebar && (
+          <button className="icon-only" title="Sidebar ausklappen" onClick={onToggleSidebar}>
+            <PanelLeftOpen size={16} />
+          </button>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -31,6 +44,15 @@ export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate }
           <Plus size={15} />
         </button>
       </div>
+      {onToggleSidebar && (
+        <button
+          className="icon-only mb-2"
+          title={collapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+          onClick={onToggleSidebar}
+        >
+          {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+        </button>
+      )}
       <button className={`nav-row ${!activeCategoryId ? 'active' : ''}`} onClick={() => onSelect(undefined)}>
         <FolderOpen className="mr-2 shrink-0 text-neutral-500" size={16} />
         Promptbibliothek

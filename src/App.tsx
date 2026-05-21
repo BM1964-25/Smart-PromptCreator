@@ -13,8 +13,6 @@ import {
   KeyRound,
   Library,
   Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
   Plus,
   Search,
   Settings,
@@ -146,13 +144,6 @@ export default function App() {
               <Filter size={16} />
             </button>
             )}
-            <button
-              className="icon-only"
-              title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
-              onClick={() => setSidebarCollapsed((current) => !current)}
-            >
-              {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-            </button>
           </div>
         </div>
 
@@ -177,32 +168,32 @@ export default function App() {
           </div>
 
           {!sidebarCollapsed && (
-          <>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">Tabs</span>
-            <button className="icon-only" title="Tab hinzufuegen" onClick={() => createTab()}>
-              <Plus size={15} />
-            </button>
-          </div>
-          <DndContext collisionDetection={closestCenter} onDragEnd={reorderTabs}>
-            <SortableContext items={(tabs || []).map((tab) => tab.id!)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-1">
-                {tabs?.map((tab) => (
-                  <SortableTab key={tab.id} tab={tab} active={store.activeTabId === tab.id} onSelect={() => store.setActiveTab(tab.id)} />
-                ))}
+            <>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">Tabs</span>
+                <button className="icon-only" title="Tab hinzufuegen" onClick={() => createTab()}>
+                  <Plus size={15} />
+                </button>
               </div>
-            </SortableContext>
-          </DndContext>
-
+              <DndContext collisionDetection={closestCenter} onDragEnd={reorderTabs}>
+                <SortableContext items={(tabs || []).map((tab) => tab.id!)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-1">
+                    {tabs?.map((tab) => (
+                      <SortableTab key={tab.id} tab={tab} active={store.activeTabId === tab.id} onSelect={() => store.setActiveTab(tab.id)} />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </>
+          )}
           <CategoryNav
             categories={(categories || []).filter((category) => category.tabId === store.activeTabId)}
             activeCategoryId={store.activeCategoryId}
             onSelect={store.setActiveCategory}
             onCreate={() => store.activeTabId && createCategory(store.activeTabId)}
             collapsed={sidebarCollapsed}
+            onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
           />
-          </>
-          )}
         </nav>
 
         <div className="space-y-3 border-t border-line p-3 dark:border-[#333]">
