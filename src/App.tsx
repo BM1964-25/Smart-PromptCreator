@@ -114,7 +114,7 @@ export default function App() {
             </div>
             {!sidebarCollapsed && (
             <div className="min-w-0 flex-1">
-              <h1 className="text-base font-semibold">Smart Prompt Creator</h1>
+              <h1 className="text-xl font-semibold tracking-normal">SMART PromptCreator</h1>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">Lokale Promptbibliothek</p>
             </div>
             )}
