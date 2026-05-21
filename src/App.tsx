@@ -197,7 +197,7 @@ export default function App() {
           />
         </nav>
 
-        <div className={`px-3 pb-3 ${sidebarCollapsed ? 'flex justify-center' : 'flex justify-end'}`}>
+        <div className={`px-3 pb-3 ${sidebarCollapsed ? 'flex justify-center' : 'flex justify-start'}`}>
           <button
             className="icon-only"
             title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
