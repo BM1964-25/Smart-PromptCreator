@@ -238,8 +238,15 @@ export default function App() {
       </aside>
 
       <section className="grid min-w-0 flex-1 grid-cols-[360px_minmax(0,1fr)]">
-        <PromptList prompts={visiblePrompts} categories={categories || []} selectedId={selectedPrompt?.id} onSelect={store.setSelectedPrompt} />
-        <PromptEditor prompt={selectedPrompt} settings={settings} />
+        <PromptList
+          prompts={visiblePrompts}
+          categories={categories || []}
+          selectedId={selectedPrompt?.id}
+          search={store.search}
+          onSearchChange={store.setSearch}
+          onSelect={store.setSelectedPrompt}
+        />
+        <PromptEditor prompt={selectedPrompt} settings={settings} categories={categories || []} />
       </section>
 
       {showSettings && <SettingsPanel settings={settings} onClose={() => setShowSettings(false)} />}

@@ -1,24 +1,26 @@
-import { Copy, Save, Settings2, Sparkles, Star, Trash2 } from 'lucide-react';
+import { Copy, Save, Settings2, Sparkles, Star, Tags, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { db } from '../db/database';
-import { optimizeWithAnthropic } from '../services/anthropicService';
+import { optimizeWithAnthropic, suggestPromptMetadataWithAnthropic } from '../services/anthropicService';
 import { defaultOptimizerPreferences, optimizeLocally } from '../services/optimizerService';
-import { duplicatePrompt, updatePrompt } from '../services/promptService';
-import type { AiProvider, OptimizerPreferences, Prompt, Settings } from '../types/domain';
+import { duplicatePrompt, findOrCreateCategory, updatePrompt } from '../services/promptService';
+import type { AiProvider, Category, OptimizerPreferences, Prompt, Settings } from '../types/domain';
 import { decryptSecret } from '../utils/crypto';
 
 interface PromptEditorProps {
   prompt?: Prompt;
   settings?: Settings;
+  categories: Category[];
 }
 
-export function PromptEditor({ prompt, settings }: PromptEditorProps) {
+export function PromptEditor({ prompt, settings, categories }: PromptEditorProps) {
   const [provider, setProvider] = useState<AiProvider>('anthropic');
   const [anthropicModel, setAnthropicModel] = useState(settings?.anthropicModel || 'claude-3-5-haiku-latest');
   const [showExpertOptions, setShowExpertOptions] = useState(false);
   const [optimizerPreferences, setOptimizerPreferences] = useState<OptimizerPreferences>(defaultOptimizerPreferences);
   const [busy, setBusy] = useState(false);
+  const [metadataBusy, setMetadataBusy] = useState(false);
   const contentStats = getTextStats(prompt?.content || '');
   const optimizedStats = getTextStats(prompt?.optimizedContent || '');
 
@@ -56,6 +58,37 @@ export function PromptEditor({ prompt, settings }: PromptEditorProps) {
     if (!prompt.optimizedContent.trim()) return;
     await navigator.clipboard.writeText(prompt.optimizedContent);
     toast.success('Optimierte Version kopiert');
+  }
+
+  async function suggestMetadata() {
+    if (!prompt) return;
+    if (!prompt.content.trim()) {
+      toast.error('Bitte zuerst einen Prompt eingeben.');
+      return;
+    }
+
+    setMetadataBusy(true);
+    try {
+      const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
+      if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
+      const suggestion = await suggestPromptMetadataWithAnthropic(apiKey, prompt.content, categories, anthropicModel);
+      const category = await findOrCreateCategory(prompt.tabId, suggestion.categoryName);
+      await updatePrompt(prompt.id!, {
+        title: suggestion.title || prompt.title,
+        categoryId: category.id,
+        tags: Array.from(new Set([...prompt.tags, ...suggestion.tags])).slice(0, 12)
+      });
+      toast.success('Kategorie und Tags vorgeschlagen');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Metadaten-Vorschlag fehlgeschlagen');
+    } finally {
+      setMetadataBusy(false);
+    }
+  }
+
+  async function removeTag(tagToRemove: string) {
+    if (!prompt) return;
+    await updatePrompt(prompt.id!, { tags: prompt.tags.filter((tag) => tag !== tagToRemove) });
   }
 
   return (
@@ -158,12 +191,61 @@ export function PromptEditor({ prompt, settings }: PromptEditorProps) {
               />
               Fehlende Informationen als Rückfragen ergänzen
             </label>
-            <input
-              className="field"
-              value={prompt.tags.join(', ')}
-              onChange={(event) => updatePrompt(prompt.id!, { tags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean) })}
-              placeholder="Tags"
-            />
+            <div className="grid gap-3 rounded border border-line bg-white p-3 dark:border-[#333] dark:bg-[#181817]">
+              <div className="grid grid-cols-[1fr_auto] gap-2">
+                <label className="grid gap-1 text-xs font-medium text-neutral-500">
+                  Kategorie zum Speichern
+                  <select
+                    className="field"
+                    value={prompt.categoryId}
+                    onChange={(event) => {
+                      const category = categories.find((item) => item.id === event.target.value);
+                      updatePrompt(prompt.id!, { categoryId: event.target.value, tabId: category?.tabId || prompt.tabId });
+                    }}
+                  >
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button className="icon-button self-end" onClick={suggestMetadata} disabled={metadataBusy}>
+                  <Tags size={16} /> {metadataBusy ? 'Analysiert...' : 'KI-Tags'}
+                </button>
+              </div>
+
+              <label className="grid gap-1 text-xs font-medium text-neutral-500">
+                Tags zum Wiederfinden
+                <input
+                  className="field"
+                  value={prompt.tags.join(', ')}
+                  onChange={(event) =>
+                    updatePrompt(prompt.id!, {
+                      tags: event.target.value
+                        .split(',')
+                        .map((tag) => tag.trim().replace(/^#/, '').toLowerCase())
+                        .filter(Boolean)
+                    })
+                  }
+                  placeholder="seo, blog, strategie"
+                />
+              </label>
+
+              <div className="flex min-h-8 flex-wrap gap-2">
+                {prompt.tags.length === 0 && <span className="text-xs text-neutral-500">Noch keine Tags vergeben.</span>}
+                {prompt.tags.map((tag) => (
+                  <button
+                    key={tag}
+                    className="rounded bg-[#ece8dc] px-2 py-1 text-xs text-neutral-700 transition hover:bg-[#ded8c8] dark:bg-[#2b2b29] dark:text-neutral-300"
+                    onClick={() => removeTag(tag)}
+                    title="Tag entfernen"
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="flex min-h-0 flex-1 flex-col p-4">
             <div className="mb-3 flex items-center justify-between gap-3">

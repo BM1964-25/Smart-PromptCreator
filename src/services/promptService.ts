@@ -73,6 +73,16 @@ export async function createCategory(tabId: string, name = 'Neue Kategorie') {
   return category;
 }
 
+export async function findOrCreateCategory(tabId: string, name: string) {
+  const normalized = name.trim().toLowerCase();
+  const existing = await db.categories
+    .where({ tabId })
+    .filter((category) => category.name.trim().toLowerCase() === normalized)
+    .first();
+  if (existing) return existing;
+  return createCategory(tabId, name.trim() || 'Allgemein');
+}
+
 export function filterPrompts(prompts: Prompt[], query: string, favoriteOnly: boolean, categoryId?: string, tabId?: string) {
   const normalized = query.trim().toLowerCase();
   return prompts.filter((prompt) => {

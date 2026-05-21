@@ -1,4 +1,4 @@
-import type { OptimizerPreferences } from '../types/domain';
+import type { Category, OptimizerPreferences } from '../types/domain';
 import { buildOptimizationPrompt } from './optimizerService';
 
 const anthropicVersion = '2023-06-01';
@@ -7,6 +7,12 @@ const testModel = 'claude-3-5-haiku-latest';
 export interface AnthropicTestResult {
   ok: boolean;
   message: string;
+}
+
+export interface PromptMetadataSuggestion {
+  title?: string;
+  categoryName: string;
+  tags: string[];
 }
 
 export async function optimizeWithAnthropic(apiKey: string, content: string, preferences: OptimizerPreferences, model = testModel) {
@@ -84,4 +90,69 @@ export async function testAnthropicConnection(apiKey: string): Promise<Anthropic
       : message;
     return { ok: false, message: corsHint };
   }
+}
+
+export async function suggestPromptMetadataWithAnthropic(
+  apiKey: string,
+  content: string,
+  categories: Category[],
+  model = testModel
+): Promise<PromptMetadataSuggestion> {
+  const knownCategories = categories.map((category) => category.name).join(', ') || 'keine vorhandenen Kategorien';
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey.trim(),
+      'anthropic-version': anthropicVersion
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 450,
+      temperature: 0.2,
+      system:
+        'Du kategorisierst Prompts fuer eine lokale Prompt-Bibliothek. Antworte ausschliesslich mit validem JSON ohne Markdown.',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            'Analysiere diesen Prompt und schlage passende Speicher-Metadaten vor.',
+            `Vorhandene Kategorien: ${knownCategories}`,
+            '',
+            'Regeln:',
+            '- Waehle wenn sinnvoll eine vorhandene Kategorie.',
+            '- Wenn keine vorhandene Kategorie passt, schlage eine kurze neue Kategorie vor.',
+            '- Erzeuge 3 bis 6 kurze Tags, lowercase, ohne #, keine Duplikate.',
+            '- Optional: kurzer, klarer Titel.',
+            '',
+            'JSON-Format:',
+            '{"title":"...","categoryName":"...","tags":["tag","tag"]}',
+            '',
+            'Prompt:',
+            content
+          ].join('\n')
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    const details = await response.json().catch(() => undefined);
+    throw new Error(details?.error?.message || `Anthropic Metadaten-Anfrage fehlgeschlagen (${response.status}).`);
+  }
+
+  const data = await response.json();
+  const text = String(data?.content?.[0]?.text || '').trim();
+  const parsed = JSON.parse(text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, ''));
+
+  return {
+    title: typeof parsed.title === 'string' ? parsed.title.trim() : undefined,
+    categoryName: typeof parsed.categoryName === 'string' ? parsed.categoryName.trim() : 'Allgemein',
+    tags: Array.isArray(parsed.tags)
+      ? parsed.tags
+          .map((tag: unknown) => String(tag).trim().replace(/^#/, '').toLowerCase())
+          .filter(Boolean)
+          .slice(0, 8)
+      : []
+  };
 }
