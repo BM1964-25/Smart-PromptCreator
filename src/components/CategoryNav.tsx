@@ -35,7 +35,7 @@ export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, 
       </div>
       <button className={`nav-row ${!activeCategoryId ? 'active' : ''}`} onClick={() => onSelect(undefined)}>
         <FolderOpen className="mr-2 shrink-0 text-neutral-500" size={16} />
-        Promptbibliothek
+        Prompt-Bibliothek
       </button>
       <DndContext collisionDetection={closestCenter} onDragEnd={reorderCategories}>
         <SortableContext items={categories.map((category) => category.id!)} strategy={verticalListSortingStrategy}>

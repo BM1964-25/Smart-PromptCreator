@@ -113,7 +113,7 @@ export async function suggestPromptMetadataWithAnthropic(
       max_tokens: 450,
       temperature: 0.2,
       system:
-        'Du kategorisierst Prompts fuer eine lokale Promptbibliothek. Antworte ausschliesslich mit validem JSON ohne Markdown.',
+        'Du kategorisierst Prompts fuer eine lokale Prompt-Bibliothek. Antworte ausschliesslich mit validem JSON ohne Markdown.',
       messages: [
         {
           role: 'user',

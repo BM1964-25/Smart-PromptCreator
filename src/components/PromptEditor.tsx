@@ -26,7 +26,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
   const optimizedStats = getTextStats(prompt?.optimizedContent || '');
 
   if (!prompt) {
-    return <div className="grid place-items-center text-sm text-neutral-500">Erstelle oder importiere einen Eintrag in der Promptbibliothek.</div>;
+    return <div className="grid place-items-center text-sm text-neutral-500">Erstelle oder importiere einen Eintrag in der Prompt-Bibliothek.</div>;
   }
 
   async function optimize() {
@@ -221,7 +221,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
                   className="field min-h-20 resize-y leading-6"
                   value={promptDescription}
                   onChange={(event) => updatePrompt(prompt.id!, { description: event.target.value })}
-                  placeholder="Kurze Beschreibung fuer die Promptbibliothek"
+                  placeholder="Kurze Beschreibung fuer die Prompt-Bibliothek"
                 />
               </label>
               <div className="rounded border border-line bg-[#f9f8f3] p-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300">

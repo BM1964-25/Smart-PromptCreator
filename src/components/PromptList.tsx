@@ -16,7 +16,7 @@ export function PromptList({ prompts, categories, selectedId, search, onSearchCh
     <div className="min-w-0 border-r border-line bg-[#f9f8f3] dark:border-[#333] dark:bg-[#1c1c1b]">
       <div className="grid gap-3 border-b border-line px-4 py-3 dark:border-[#333]">
         <div>
-          <h2 className="text-xl font-semibold tracking-normal">Promptbibliothek</h2>
+          <h2 className="text-xl font-semibold tracking-normal">Prompt-Bibliothek</h2>
           <p className="text-xs text-neutral-500">{prompts.length} Eintraege · Suche in Titel, Text und Tags</p>
         </div>
         <div className="relative">
@@ -25,7 +25,7 @@ export function PromptList({ prompts, categories, selectedId, search, onSearchCh
             className="h-10 w-full rounded border border-line bg-white pl-9 pr-3 text-sm outline-none focus:border-brand dark:border-[#3a3a38] dark:bg-[#151515]"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Promptbibliothek durchsuchen..."
+            placeholder="Prompt-Bibliothek durchsuchen..."
           />
         </div>
       </div>
