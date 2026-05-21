@@ -205,6 +205,16 @@ export default function App() {
             </button>
           </div>
 
+          <div className={`mb-5 ${sidebarCollapsed ? 'flex justify-center' : 'pl-[2.5px]'}`}>
+            <button
+              className="icon-only"
+              title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+              onClick={() => setSidebarCollapsed((current) => !current)}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </button>
+          </div>
+
           {!sidebarCollapsed && (
             <>
               <div className="mb-2 flex items-center justify-between">
@@ -239,16 +249,6 @@ export default function App() {
             collapsed={sidebarCollapsed}
           />
         </nav>
-
-        <div className={`px-3 pb-3 ${sidebarCollapsed ? 'flex justify-center' : 'grid grid-cols-4 gap-2'}`}>
-          <button
-            className={sidebarCollapsed ? 'icon-only' : 'icon-only col-start-4'}
-            title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
-            onClick={() => setSidebarCollapsed((current) => !current)}
-          >
-            {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-          </button>
-        </div>
 
         <div className="space-y-3 border-t border-line p-3 dark:border-[#333]">
           <div className={`grid gap-2 ${sidebarCollapsed ? 'grid-cols-1' : 'grid-cols-4'}`}>
