@@ -3,33 +3,42 @@ set -e
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
+BUNDLE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+BUNDLED_APP_DIR="$BUNDLE_DIR/Resources/app"
 SEARCH_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_DIR=""
 
-for _ in {1..8}; do
-  if [ -f "$SEARCH_DIR/package.json" ] && [ -f "$SEARCH_DIR/server/local-server.mjs" ]; then
-    APP_DIR="$SEARCH_DIR"
-    break
-  fi
-  SEARCH_DIR="$(dirname "$SEARCH_DIR")"
-done
+if [ -f "$BUNDLED_APP_DIR/server/local-server.mjs" ] && [ -d "$BUNDLED_APP_DIR/dist" ]; then
+  APP_DIR="$BUNDLED_APP_DIR"
+else
+  for _ in {1..8}; do
+    if [ -f "$SEARCH_DIR/package.json" ] && [ -f "$SEARCH_DIR/server/local-server.mjs" ]; then
+      APP_DIR="$SEARCH_DIR"
+      break
+    fi
+    SEARCH_DIR="$(dirname "$SEARCH_DIR")"
+  done
+fi
 
 if [ -z "$APP_DIR" ]; then
   osascript -e 'display alert "SMART PromptCreator konnte den Projektordner nicht finden." message "Bitte die App im Projektordner oder im erzeugten dist-launcher Ordner starten."'
   exit 1
 fi
 
-cd "$APP_DIR"
-
-mkdir -p logs
+LOG_DIR="$HOME/Library/Logs/SMART PromptCreator"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/launcher.log"
 
 if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js wurde nicht gefunden" >> "$LOG_FILE"
   osascript -e 'display alert "Node.js wurde nicht gefunden." message "Bitte Node.js installieren oder die App ueber npm start im Terminal starten."'
   exit 1
 fi
 
-if [ ! -d "dist" ]; then
-  npm run build >> "logs/launcher.log" 2>&1
+if [ ! -d "$APP_DIR/dist" ]; then
+  cd "$APP_DIR"
+  npm run build >> "$LOG_FILE" 2>&1
 fi
 
-exec env SMART_OPEN_BROWSER=1 node server/local-server.mjs >> "logs/launcher.log" 2>&1
+cd /
+SMART_OPEN_BROWSER=1 SMART_LOG_DIR="$LOG_DIR" nohup node "$APP_DIR/server/local-server.mjs" >> "$LOG_FILE" 2>&1 &

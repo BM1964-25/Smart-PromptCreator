@@ -8,4 +8,4 @@ If Not fso.FileExists(root & "\package.json") Or Not fso.FileExists(root & "\ser
 End If
 
 shell.CurrentDirectory = root
-shell.Run "cmd /c if not exist logs mkdir logs & where node >nul 2>nul || (echo Node.js wurde nicht gefunden. Bitte Node.js installieren. >> logs\launcher.log & exit /b 1) & if not exist dist npm run build >> logs\launcher.log 2>&1 & set SMART_OPEN_BROWSER=1& node server\local-server.mjs >> logs\launcher.log 2>&1", 0, False
+shell.Run "cmd /c if not exist logs mkdir logs & where node >nul 2>nul || (echo Node.js wurde nicht gefunden. Bitte Node.js installieren. >> logs\launcher.log & exit /b 1) & if not exist dist npm run build >> logs\launcher.log 2>&1 & set SMART_OPEN_BROWSER=1& node """ & root & "\server\local-server.mjs"" >> logs\launcher.log 2>&1", 0, False

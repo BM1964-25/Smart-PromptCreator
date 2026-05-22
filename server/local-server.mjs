@@ -9,7 +9,7 @@ const APP_PORT = Number(process.env.SMART_PROMPT_CREATOR_PORT || process.env.POR
 const ANTHROPIC_VERSION = '2023-06-01';
 const ROOT_DIR = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const DIST_DIR = join(ROOT_DIR, 'dist');
-const LOG_DIR = join(ROOT_DIR, 'logs');
+const LOG_DIR = process.env.SMART_LOG_DIR ? resolve(process.env.SMART_LOG_DIR) : join(ROOT_DIR, 'logs');
 const LOG_FILE = join(LOG_DIR, 'smart-prompt-creator.log');
 const OPEN_BROWSER = process.argv.includes('--open') || process.env.SMART_OPEN_BROWSER === '1';
 
@@ -164,8 +164,21 @@ const server = createServer(async (request, response) => {
   await serveStatic(request, response);
 });
 
+const appUrl = `http://127.0.0.1:${APP_PORT}/`;
+
+server.on('error', (error) => {
+  if (error?.code === 'EADDRINUSE') {
+    log(`Port ${APP_PORT} is already in use. Opening existing app at ${appUrl}`);
+    if (OPEN_BROWSER) openBrowser(appUrl);
+    process.exit(0);
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  log(`Server failed: ${message}`);
+  process.exit(1);
+});
+
 server.listen(APP_PORT, '127.0.0.1', () => {
-  const url = `http://127.0.0.1:${APP_PORT}/`;
-  log(`SMART PromptCreator local server running at ${url}`);
-  if (OPEN_BROWSER) openBrowser(url);
+  log(`SMART PromptCreator local server running at ${appUrl}`);
+  if (OPEN_BROWSER) openBrowser(appUrl);
 });
