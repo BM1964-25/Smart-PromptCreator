@@ -1,13 +1,35 @@
 #!/bin/zsh
 set -e
 
-APP_DIR="$(cd "$(dirname "$0")/../../../../" && pwd)"
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+SEARCH_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_DIR=""
+
+for _ in {1..8}; do
+  if [ -f "$SEARCH_DIR/package.json" ] && [ -f "$SEARCH_DIR/server/local-server.mjs" ]; then
+    APP_DIR="$SEARCH_DIR"
+    break
+  fi
+  SEARCH_DIR="$(dirname "$SEARCH_DIR")"
+done
+
+if [ -z "$APP_DIR" ]; then
+  osascript -e 'display alert "SMART PromptCreator konnte den Projektordner nicht finden." message "Bitte die App im Projektordner oder im erzeugten dist-launcher Ordner starten."'
+  exit 1
+fi
+
 cd "$APP_DIR"
 
 mkdir -p logs
 
-if [ ! -d "dist" ]; then
-  /usr/bin/env npm run build >> "logs/launcher.log" 2>&1
+if ! command -v node >/dev/null 2>&1; then
+  osascript -e 'display alert "Node.js wurde nicht gefunden." message "Bitte Node.js installieren oder die App ueber npm start im Terminal starten."'
+  exit 1
 fi
 
-SMART_OPEN_BROWSER=1 /usr/bin/env node server/local-server.mjs >> "logs/launcher.log" 2>&1 &
+if [ ! -d "dist" ]; then
+  npm run build >> "logs/launcher.log" 2>&1
+fi
+
+exec env SMART_OPEN_BROWSER=1 node server/local-server.mjs >> "logs/launcher.log" 2>&1
