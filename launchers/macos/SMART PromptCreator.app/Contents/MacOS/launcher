@@ -1,0 +1,13 @@
+#!/bin/zsh
+set -e
+
+APP_DIR="$(cd "$(dirname "$0")/../../../../" && pwd)"
+cd "$APP_DIR"
+
+mkdir -p logs
+
+if [ ! -d "dist" ]; then
+  /usr/bin/env npm run build >> "logs/launcher.log" 2>&1
+fi
+
+SMART_OPEN_BROWSER=1 /usr/bin/env node server/local-server.mjs >> "logs/launcher.log" 2>&1 &
