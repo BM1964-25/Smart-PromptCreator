@@ -12,6 +12,8 @@
   <string>SMART PromptCreator</string>
   <key>CFBundleIconFile</key>
   <string>app-icon</string>
+  <key>CFBundleIconName</key>
+  <string>app-icon</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
