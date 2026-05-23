@@ -11,15 +11,15 @@
   <key>CFBundleDisplayName</key>
   <string>SMART PromptCreator</string>
   <key>CFBundleIconFile</key>
-  <string>app-icon</string>
+  <string>smart-promptcreator-icon</string>
   <key>CFBundleIconName</key>
-  <string>app-icon</string>
+  <string>smart-promptcreator-icon</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>0.1.1</string>
   <key>CFBundleVersion</key>
-  <string>0.1.0</string>
+  <string>0.1.1</string>
   <key>LSMinimumSystemVersion</key>
   <string>12.0</string>
 </dict>

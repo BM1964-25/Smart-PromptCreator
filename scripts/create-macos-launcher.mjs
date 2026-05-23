@@ -30,7 +30,13 @@ if (process.platform === 'darwin') {
   const iconset = join(tmpdir(), 'smart-prompt-creator-icon.iconset');
   const rsrc = join(tmpdir(), 'smart-prompt-creator-icon.rsrc');
   await rm(iconset, { recursive: true, force: true });
-  await run('iconutil', ['-c', 'iconset', join(target, 'Contents', 'Resources', 'app-icon.icns'), '-o', iconset]);
+  await run('iconutil', [
+    '-c',
+    'iconset',
+    join(target, 'Contents', 'Resources', 'smart-promptcreator-icon.icns'),
+    '-o',
+    iconset
+  ]);
   const iconPng = join(iconset, 'icon_512x512.png');
   await run('sips', ['-i', iconPng]);
   await run('sh', ['-c', `DeRez -only icns "${iconPng}" > "${rsrc}"`]);
