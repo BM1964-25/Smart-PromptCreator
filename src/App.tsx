@@ -148,9 +148,12 @@ export default function App() {
       >
         <div className="border-b border-line p-4 dark:border-[#333]">
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <div className="grid h-9 w-9 place-items-center rounded bg-brand text-white">
-              <Sparkles size={18} />
-            </div>
+            <img
+              src="/smart-promptcreator-icon.png"
+              alt="SMART PromptCreator"
+              className="h-9 w-9 rounded object-cover"
+              draggable={false}
+            />
             {!sidebarCollapsed && (
             <div className="min-w-0 flex-1">
               <h1 className="whitespace-nowrap text-[22px] font-semibold tracking-normal">SMART PromptCreator</h1>
