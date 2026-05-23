@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SMART PromptCreator">
-  <rect width="512" height="512" rx="112" fill="#256f63"/>
-  <path fill="#fdfcf8" d="M137 152h238c18 0 33 15 33 33v142c0 18-15 33-33 33H232l-70 50c-13 9-31 0-31-16v-34h-19c-18 0-33-15-33-33V185c0-18 15-33 33-33h25z"/>
-  <path fill="#256f63" d="M156 214h200v28H156zm0 58h146v28H156z"/>
-  <path fill="#d8a83f" d="M363 93l12 36 38 12-38 12-12 36-12-36-38-12 38-12zm-237 6 9 27 28 9-28 9-9 27-9-27-28-9 28-9z"/>
-</svg>
