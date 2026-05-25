@@ -213,11 +213,10 @@ export default function App() {
               <HelpCircle size={17} />
               {!sidebarCollapsed && <span>Hilfe</span>}
             </button>
-          </div>
-
-          <div className={`mb-5 ${sidebarCollapsed ? 'flex justify-center' : 'pl-[2.5px]'}`}>
             <button
-              className="icon-only"
+              className={`icon-only mt-1 ${
+                sidebarCollapsed ? 'mx-auto' : ''
+              }`}
               title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
               onClick={() => setSidebarCollapsed((current) => !current)}
             >
@@ -288,15 +287,18 @@ export default function App() {
                 </div>
               </div>
 
-              <footer className="space-y-2 text-[11px] leading-5 text-neutral-500 dark:text-neutral-400">
+              <footer className="space-y-2 text-center text-[11px] leading-5 text-neutral-500 dark:text-neutral-400">
                 <div>
-                  <p className="font-medium text-neutral-600 dark:text-neutral-300">© 2026 Smart Prompt Creator</p>
-                  <p>Powered by Local-first AI Tools</p>
+                  <p className="font-medium text-neutral-600 dark:text-neutral-300">© 2026 BuiltSmart AI</p>
+                  <p>powered by BuiltSmart Hub</p>
                 </div>
-                <div className="flex flex-wrap gap-x-3 gap-y-1">
-                  <a className="hover:text-brand" href="#impressum">Impressum</a>
-                  <a className="hover:text-brand" href="#datenschutz">Datenschutz</a>
-                  <a className="hover:text-brand" href="#agb">AGB</a>
+                <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+                  <a className="hover:text-brand" href="https://www.built-smart-hub.com/impressum" target="_blank" rel="noreferrer">Impressum</a>
+                  <span>|</span>
+                  <a className="hover:text-brand" href="https://www.built-smart-hub.com/datenschutz" target="_blank" rel="noreferrer">Datenschutz</a>
+                  <span>|</span>
+                  <a className="hover:text-brand" href="https://www.built-smart-hub.com/agb" target="_blank" rel="noreferrer">AGB</a>
+                  <a className="basis-full hover:text-brand" href="https://www.built-smart-hub.com/widerrufbelehrung" target="_blank" rel="noreferrer">Widerrufbelehrung</a>
                 </div>
               </footer>
             </>
