@@ -213,15 +213,6 @@ export default function App() {
               <HelpCircle size={17} />
               {!sidebarCollapsed && <span>Hilfe</span>}
             </button>
-            <button
-              className={`icon-only mt-1 ${
-                sidebarCollapsed ? 'mx-auto' : ''
-              }`}
-              title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
-              onClick={() => setSidebarCollapsed((current) => !current)}
-            >
-              {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-            </button>
           </div>
 
           {!sidebarCollapsed && (
@@ -258,6 +249,18 @@ export default function App() {
             collapsed={sidebarCollapsed}
           />
         </nav>
+
+        <div className="px-3 pb-3">
+          <button
+            className={`grid h-9 w-9 appearance-none place-items-center rounded bg-transparent p-0 text-neutral-500 transition hover:text-brand dark:text-neutral-400 dark:hover:text-[#f3f0e8] ${
+              sidebarCollapsed ? 'mx-auto' : ''
+            }`}
+            title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+            onClick={() => setSidebarCollapsed((current) => !current)}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
+        </div>
 
         <div className="space-y-3 border-t border-line p-3 dark:border-[#333]">
           <div className={`grid gap-2 ${sidebarCollapsed ? 'grid-cols-1' : 'grid-cols-4'}`}>
