@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "start": "node server/local-server.mjs",
     "server": "node server/local-server.mjs",
-    "launcher:mac": "node scripts/create-macos-launcher.mjs",
+    "launcher:mac": "npm run build && node scripts/create-macos-launcher.mjs",
     "license:dev": "tsx license-server/index.ts"
   },
   "dependencies": {
