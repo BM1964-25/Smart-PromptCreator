@@ -17,11 +17,28 @@ export function localApiUrl(path: string) {
   return `${getLocalProxyBase()}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
+function formatProxyMessage(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value !== 'object') return String(value);
+
+  const record = value as Record<string, unknown>;
+  const nestedMessage = record.message || record.error || record.type;
+  if (nestedMessage && nestedMessage !== value) return formatProxyMessage(nestedMessage);
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return 'Unbekannter API-Fehler.';
+  }
+}
+
 export async function parseProxyError(response: Response) {
   const payload = await response.json().catch(() => undefined);
   const anthropicErrorType = payload?.error?.type;
   const anthropicMessage = payload?.error?.message;
-  const message = payload?.message || anthropicMessage || payload?.error || response.statusText;
+  const message = formatProxyMessage(payload?.message || anthropicMessage || payload?.error || response.statusText);
 
   if (response.status === 401 || anthropicErrorType === 'authentication_error') {
     return 'Anthropic API-Schlüssel ungültig oder abgelaufen. Bitte prüfe den Key in den Einstellungen und speichere ihn erneut.';

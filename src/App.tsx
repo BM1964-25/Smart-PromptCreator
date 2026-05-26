@@ -298,7 +298,7 @@ export default function App() {
                 </div>
                 <div className="space-y-2">
                   <StatusRow icon={<KeyRound size={14} />} label="Lizenz" value={licenseStatus === 'active' ? 'Aktiv' : 'Nicht aktiviert'} active={licenseStatus === 'active'} />
-                  <StatusRow icon={<Sparkles size={14} />} label="Anthropic" value={anthropicReady ? 'Konfiguriert' : 'API-Key fehlt'} active={anthropicReady} />
+                  <StatusRow icon={<Sparkles size={14} />} label="Anthropic" value={anthropicReady ? 'API-Key gespeichert' : 'API-Key fehlt'} active={anthropicReady} />
                   <StatusRow icon={<HardDrive size={14} />} label="Speicher" value="IndexedDB lokal" active />
                   <StatusRow icon={<FileText size={14} />} label="Prompt-Bibliothek" value={`${prompts?.length || 0}`} active />
                 </div>
