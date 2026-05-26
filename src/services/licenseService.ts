@@ -1,4 +1,5 @@
 import { db } from '../db/database';
+import { defaultAnthropicModel } from './anthropicService';
 
 export async function validateLicense(licenseKey: string, endpoint: string) {
   const response = await fetch(`${endpoint.replace(/\/$/, '')}/license/validate`, {
@@ -15,7 +16,7 @@ export async function validateLicense(licenseKey: string, endpoint: string) {
       apiKeys: {},
       theme: 'system',
       language: 'de',
-      anthropicModel: 'claude-3-5-haiku-latest',
+      anthropicModel: defaultAnthropicModel,
       backup: { autoBackup: false }
     }),
     license: {

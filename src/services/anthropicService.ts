@@ -2,7 +2,31 @@ import type { Category, OptimizerPreferences } from '../types/domain';
 import { localApiUrl, parseProxyError } from './localProxy';
 import { buildOptimizationPrompt } from './optimizerService';
 
-const testModel = 'claude-3-5-haiku-latest';
+export const defaultAnthropicModel = 'claude-haiku-4-5-20251001';
+
+export const anthropicModelOptions = [
+  {
+    value: 'claude-haiku-4-5-20251001',
+    label: 'Claude Haiku 4.5',
+    description: 'Schnell und günstig für Prompt-Optimierung'
+  },
+  {
+    value: 'claude-sonnet-4-6',
+    label: 'Claude Sonnet 4.6',
+    description: 'Mehr Qualität für anspruchsvolle Prompts'
+  },
+  {
+    value: 'claude-opus-4-7',
+    label: 'Claude Opus 4.7',
+    description: 'Maximale Qualität für komplexe Aufgaben'
+  }
+] as const;
+
+export function normalizeAnthropicModel(model?: string) {
+  const trimmed = model?.trim();
+  if (!trimmed || trimmed === 'claude-3-5-haiku-latest') return defaultAnthropicModel;
+  return trimmed;
+}
 
 export interface AnthropicTestResult {
   ok: boolean;
@@ -30,9 +54,9 @@ async function postAnthropicMessage(apiKey: string, payload: Record<string, unkn
   return response.json();
 }
 
-export async function optimizeWithAnthropic(apiKey: string, content: string, preferences: OptimizerPreferences, model = testModel) {
+export async function optimizeWithAnthropic(apiKey: string, content: string, preferences: OptimizerPreferences, model = defaultAnthropicModel) {
   const data = await postAnthropicMessage(apiKey, {
-    model,
+    model: normalizeAnthropicModel(model),
     max_tokens: preferences.strength === 'premium' ? 1800 : 1000,
     temperature: preferences.strength === 'premium' ? 0.5 : 0.35,
     system: 'Du bist ein professioneller Prompt Engineer. Antworte nur mit dem optimierten Prompt, ohne Vorrede.',
@@ -46,14 +70,14 @@ export async function optimizeWithAnthropic(apiKey: string, content: string, pre
   return data?.content?.[0]?.text?.trim() || '';
 }
 
-export async function testAnthropicConnection(apiKey: string): Promise<AnthropicTestResult> {
+export async function testAnthropicConnection(apiKey: string, model = defaultAnthropicModel): Promise<AnthropicTestResult> {
   if (!apiKey.trim()) {
     return { ok: false, message: 'Bitte zuerst einen Anthropic API-Schlüssel eingeben.' };
   }
 
   try {
     const data = await postAnthropicMessage(apiKey, {
-      model: testModel,
+      model: normalizeAnthropicModel(model),
       max_tokens: 16,
       messages: [
         {
@@ -81,11 +105,11 @@ export async function suggestPromptMetadataWithAnthropic(
   content: string,
   optimizedContent: string,
   categories: Category[],
-  model = testModel
+  model = defaultAnthropicModel
 ): Promise<PromptMetadataSuggestion> {
   const knownCategories = categories.map((category) => category.name).join(', ') || 'keine vorhandenen Kategorien';
   const data = await postAnthropicMessage(apiKey, {
-    model,
+    model: normalizeAnthropicModel(model),
     max_tokens: 450,
     temperature: 0.2,
     system:

@@ -1,7 +1,7 @@
 import { CheckCircle2, Copy, Save, Settings2, Sparkles, Star, Tags, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { optimizeWithAnthropic, suggestPromptMetadataWithAnthropic } from '../services/anthropicService';
+import { normalizeAnthropicModel, optimizeWithAnthropic, suggestPromptMetadataWithAnthropic } from '../services/anthropicService';
 import { buildVariantOptimizationPrompt, defaultOptimizerPreferences, optimizeLocally, optimizeVariantLocally } from '../services/optimizerService';
 import { duplicatePrompt, findOrCreateCategory, undoLastPromptChange, updatePrompt } from '../services/promptService';
 import type { AiProvider, Category, OptimizerPreferences, Prompt, PromptVariant, PromptVariantTone, Settings } from '../types/domain';
@@ -25,6 +25,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
   const contentStats = getTextStats(prompt?.content || '');
   const optimizedStats = getTextStats(prompt?.optimizedContent || '');
   const variants = getPromptVariants(prompt);
+  const anthropicModel = normalizeAnthropicModel(settings?.anthropicModel);
 
   if (!prompt) {
     return <div className="grid place-items-center text-sm text-neutral-500">Erstelle oder importiere einen Eintrag in der Prompt-Bibliothek.</div>;
@@ -38,7 +39,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
       if (provider === 'anthropic') {
         const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
         if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
-        optimized = await optimizeWithAnthropic(apiKey, prompt.content, optimizerPreferences);
+        optimized = await optimizeWithAnthropic(apiKey, prompt.content, optimizerPreferences, anthropicModel);
       } else {
         optimized = optimizeLocally(prompt.content, optimizerPreferences);
       }
@@ -55,7 +56,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
     if (provider === 'anthropic') {
       const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
       if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
-      return optimizeWithAnthropic(apiKey, buildVariantOptimizationPrompt(content, preferences, tone), preferences);
+      return optimizeWithAnthropic(apiKey, buildVariantOptimizationPrompt(content, preferences, tone), preferences, anthropicModel);
     }
 
     return optimizeVariantLocally(content, preferences, tone);
@@ -147,7 +148,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
     try {
       const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
       if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
-      const suggestion = await suggestPromptMetadataWithAnthropic(apiKey, prompt.content, prompt.optimizedContent, categories);
+      const suggestion = await suggestPromptMetadataWithAnthropic(apiKey, prompt.content, prompt.optimizedContent, categories, anthropicModel);
       const category = await findOrCreateCategory(prompt.tabId, suggestion.categoryName);
       await updatePrompt(prompt.id!, {
         title: shouldReplaceGeneratedTitle(prompt.title) ? suggestion.title || prompt.title : prompt.title,

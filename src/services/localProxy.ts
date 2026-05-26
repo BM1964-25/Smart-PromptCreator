@@ -31,6 +31,10 @@ export async function parseProxyError(response: Response) {
     return 'Anthropic hat die Anfrage abgelehnt. Bitte prüfe, ob dein API-Key für die Messages API freigeschaltet ist.';
   }
 
+  if (String(message).toLowerCase().includes('model')) {
+    return `Das gewählte Claude-Modell ist für diesen API-Key nicht verfügbar oder die Modell-ID ist ungültig. Bitte wähle in den Einstellungen ein anderes Modell. Details: ${message}`;
+  }
+
   if (response.status === 429 || anthropicErrorType === 'rate_limit_error') {
     return 'Anthropic Rate Limit erreicht. Bitte warte kurz und versuche es erneut.';
   }

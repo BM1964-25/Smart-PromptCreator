@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { defaultAnthropicModel, normalizeAnthropicModel } from '../services/anthropicService';
 import type { Category, Prompt, Settings, WorkspaceTab } from '../types/domain';
 
 const now = () => new Date().toISOString();
@@ -45,6 +46,7 @@ async function seedDatabaseOnce() {
   const imageCategoryId = 'default-image-prompts';
 
   if (tabCount > 0) {
+    await ensureCurrentSettings();
     await seedSamplePromptsOnce({
       tabId,
       codingTabId,
@@ -92,7 +94,7 @@ async function seedDatabaseOnce() {
       apiKeys: {},
       theme: 'system',
       language: 'de',
-      anthropicModel: 'claude-3-5-haiku-latest',
+      anthropicModel: defaultAnthropicModel,
       license: { status: 'inactive' },
       backup: { autoBackup: false }
     });
@@ -100,6 +102,27 @@ async function seedDatabaseOnce() {
 
   markSamplePromptsSeeded();
   await normalizeExistingGermanText();
+}
+
+async function ensureCurrentSettings() {
+  const settings = await db.settings.get('app');
+  if (!settings) {
+    await db.settings.put({
+      id: 'app',
+      apiKeys: {},
+      theme: 'system',
+      language: 'de',
+      anthropicModel: defaultAnthropicModel,
+      license: { status: 'inactive' },
+      backup: { autoBackup: false }
+    });
+    return;
+  }
+
+  const normalizedModel = normalizeAnthropicModel(settings.anthropicModel);
+  if (settings.anthropicModel !== normalizedModel) {
+    await db.settings.update('app', { anthropicModel: normalizedModel });
+  }
 }
 
 type SamplePromptIds = {

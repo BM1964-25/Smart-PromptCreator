@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, Plug, Save, Unplug, Wi
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { db } from '../db/database';
-import { testAnthropicConnection } from '../services/anthropicService';
+import { anthropicModelOptions, defaultAnthropicModel, normalizeAnthropicModel, testAnthropicConnection } from '../services/anthropicService';
 import type { Settings } from '../types/domain';
 import { decryptSecret, encryptSecret } from '../utils/crypto';
 
@@ -34,6 +34,7 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
   const [checking, setChecking] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({ tone: 'idle', message: 'Noch keine aktive Anthropic-Verbindung.' });
+  const selectedModel = normalizeAnthropicModel(settings?.anthropicModel || defaultAnthropicModel);
 
   useEffect(() => {
     let active = true;
@@ -111,6 +112,12 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
     }
   }
 
+  async function handleModelChange(model: string) {
+    await db.settings.update('app', { anthropicModel: model });
+    setIsConnected(false);
+    setFeedback({ tone: 'info', message: 'Claude-Modell geändert. Bitte die Verbindung erneut prüfen.' });
+  }
+
   async function handleConnect() {
     if (!activeApiKey) {
       setFeedback({ tone: 'error', message: 'Bitte zuerst einen Anthropic API-Schlüssel speichern oder eingeben.' });
@@ -120,7 +127,7 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
     setConnecting(true);
     try {
       setFeedback({ tone: 'info', message: 'Anthropic-Verbindung wird hergestellt und geprüft...' });
-      const result = await testAnthropicConnection(activeApiKey);
+      const result = await testAnthropicConnection(activeApiKey, selectedModel);
       setIsConnected(result.ok);
       setFeedback({ tone: result.ok ? 'success' : 'error', message: result.message });
       if (result.ok) toast.success('Anthropic-Verbindung aktiviert');
@@ -137,7 +144,7 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
 
     setChecking(true);
     setFeedback({ tone: 'info', message: 'Anthropic-Verbindung wird geprüft...' });
-    const result = await testAnthropicConnection(activeApiKey);
+    const result = await testAnthropicConnection(activeApiKey, selectedModel);
     setIsConnected(result.ok);
     setFeedback({ tone: result.ok ? 'success' : 'error', message: result.message });
     if (result.ok) toast.success('Anthropic-Verbindung erfolgreich');
@@ -175,6 +182,17 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
       </div>
 
       <div className="grid gap-3">
+        <label className="grid gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+          Claude-Modell
+          <select className="field" value={selectedModel} onChange={(event) => handleModelChange(event.target.value)}>
+            {anthropicModelOptions.map((model) => (
+              <option key={model.value} value={model.value}>
+                {model.label} - {model.description}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <div className="flex gap-2">
           <input
             className="field"
