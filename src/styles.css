@@ -19,7 +19,7 @@ select {
 }
 
 .icon-button {
-  @apply inline-flex h-10 items-center justify-center gap-2 rounded border border-line bg-white px-3 text-sm font-medium transition hover:border-brand hover:text-brand dark:border-[#3a3a38] dark:bg-[#151515];
+  @apply relative inline-flex h-10 items-center justify-center gap-2 rounded border border-line bg-white px-3 text-sm font-medium transition hover:border-brand hover:text-brand dark:border-[#3a3a38] dark:bg-[#151515];
 }
 
 .icon-button.active {
@@ -27,11 +27,11 @@ select {
 }
 
 .icon-only {
-  @apply grid h-9 min-w-9 place-items-center rounded border border-line bg-white text-neutral-600 transition hover:border-brand hover:text-brand dark:border-[#3a3a38] dark:bg-[#151515] dark:text-neutral-300;
+  @apply relative grid h-9 min-w-9 place-items-center rounded border border-line bg-white text-neutral-600 transition hover:border-brand hover:text-brand dark:border-[#3a3a38] dark:bg-[#151515] dark:text-neutral-300;
 }
 
 .nav-row {
-  @apply flex h-9 w-full items-center rounded px-3 text-left text-sm text-neutral-700 transition hover:bg-white dark:text-neutral-300 dark:hover:bg-[#151515];
+  @apply relative flex h-9 w-full items-center rounded px-3 text-left text-sm text-neutral-700 transition hover:bg-white dark:text-neutral-300 dark:hover:bg-[#151515];
 }
 
 .nav-row.active {
@@ -39,7 +39,7 @@ select {
 }
 
 .sidebar-nav-row {
-  @apply flex h-10 w-full items-center gap-3 rounded px-3 text-left text-sm text-neutral-700 transition hover:bg-white hover:text-ink dark:text-neutral-300 dark:hover:bg-[#151515] dark:hover:text-white;
+  @apply relative flex h-10 w-full items-center gap-3 rounded px-3 text-left text-sm text-neutral-700 transition hover:bg-white hover:text-ink dark:text-neutral-300 dark:hover:bg-[#151515] dark:hover:text-white;
 }
 
 .sidebar-nav-row.active {
@@ -48,4 +48,122 @@ select {
 
 .field {
   @apply w-full rounded border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand dark:border-[#3a3a38] dark:bg-[#151515];
+}
+
+button[title],
+label[title] {
+  @apply relative;
+}
+
+button[title]::after,
+label[title]::after,
+.icon-button[title]::after,
+.icon-only[title]::after,
+.nav-row[title]::after,
+.sidebar-nav-row[title]::after {
+  @apply pointer-events-none absolute z-50 w-max max-w-64 rounded border border-[#d8d3c7] bg-[#1f2421] px-2.5 py-1.5 text-xs font-medium leading-4 text-white opacity-0 shadow-lg transition dark:border-[#3a3a38] dark:bg-[#f3f0e8] dark:text-[#151515];
+  content: attr(title);
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+}
+
+button[title]::before,
+label[title]::before,
+.icon-button[title]::before,
+.icon-only[title]::before,
+.nav-row[title]::before,
+.sidebar-nav-row[title]::before {
+  @apply pointer-events-none absolute z-50 h-2 w-2 rotate-45 bg-[#1f2421] opacity-0 transition dark:bg-[#f3f0e8];
+  content: '';
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%) translateY(4px) rotate(45deg);
+}
+
+button[title]:hover::after,
+button[title]:focus-visible::after,
+label[title]:hover::after,
+label[title]:focus-within::after,
+.icon-button[title]:hover::after,
+.icon-button[title]:focus-visible::after,
+.icon-only[title]:hover::after,
+.icon-only[title]:focus-visible::after,
+.nav-row[title]:hover::after,
+.nav-row[title]:focus-visible::after,
+.sidebar-nav-row[title]:hover::after,
+.sidebar-nav-row[title]:focus-visible::after,
+button[title]:hover::before,
+button[title]:focus-visible::before,
+label[title]:hover::before,
+label[title]:focus-within::before,
+.icon-button[title]:hover::before,
+.icon-button[title]:focus-visible::before,
+.icon-only[title]:hover::before,
+.icon-only[title]:focus-visible::before,
+.nav-row[title]:hover::before,
+.nav-row[title]:focus-visible::before,
+.sidebar-nav-row[title]:hover::before,
+.sidebar-nav-row[title]:focus-visible::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+button[title]:hover::before,
+button[title]:focus-visible::before,
+label[title]:hover::before,
+label[title]:focus-within::before,
+.icon-button[title]:hover::before,
+.icon-button[title]:focus-visible::before,
+.icon-only[title]:hover::before,
+.icon-only[title]:focus-visible::before,
+.nav-row[title]:hover::before,
+.nav-row[title]:focus-visible::before,
+.sidebar-nav-row[title]:hover::before,
+.sidebar-nav-row[title]:focus-visible::before {
+  transform: translateX(-50%) translateY(0) rotate(45deg);
+}
+
+aside button[title]::after,
+aside label[title]::after,
+aside .icon-only[title]::after,
+aside .sidebar-nav-row[title]::after,
+aside .nav-row[title]::after {
+  left: 0;
+  transform: translateY(4px);
+}
+
+aside button[title]::before,
+aside label[title]::before,
+aside .icon-only[title]::before,
+aside .sidebar-nav-row[title]::before,
+aside .nav-row[title]::before {
+  left: 14px;
+  transform: translateY(4px) rotate(45deg);
+}
+
+aside button[title]:hover::after,
+aside button[title]:focus-visible::after,
+aside label[title]:hover::after,
+aside label[title]:focus-within::after,
+aside .icon-only[title]:hover::after,
+aside .icon-only[title]:focus-visible::after,
+aside .sidebar-nav-row[title]:hover::after,
+aside .sidebar-nav-row[title]:focus-visible::after,
+aside .nav-row[title]:hover::after,
+aside .nav-row[title]:focus-visible::after {
+  transform: translateY(0);
+}
+
+aside button[title]:hover::before,
+aside button[title]:focus-visible::before,
+aside label[title]:hover::before,
+aside label[title]:focus-within::before,
+aside .icon-only[title]:hover::before,
+aside .icon-only[title]:focus-visible::before,
+aside .sidebar-nav-row[title]:hover::before,
+aside .sidebar-nav-row[title]:focus-visible::before,
+aside .nav-row[title]:hover::before,
+aside .nav-row[title]:focus-visible::before {
+  transform: translateY(0) rotate(45deg);
 }
