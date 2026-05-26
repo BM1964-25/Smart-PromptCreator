@@ -424,7 +424,16 @@ export default function App() {
         />
       </section>
 
-      {showSettings && <SettingsPanel settings={settings} onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <SettingsPanel
+          settings={settings}
+          onClose={() => setShowSettings(false)}
+          onOpenHelp={() => {
+            setShowSettings(false);
+            setShowHelp(true);
+          }}
+        />
+      )}
       {showHelp && <HelpPanel onClose={() => setShowHelp(false)} />}
       <NameDialog dialog={nameDialog} onClose={() => setNameDialog(undefined)} onSubmit={submitNameDialog} />
       </main>

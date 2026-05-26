@@ -15,6 +15,7 @@ interface Feedback {
 
 interface AnthropicApiKeyManagerProps {
   settings?: Settings;
+  onOpenHelp?: () => void;
 }
 
 function maskApiKey(apiKey: string) {
@@ -23,7 +24,7 @@ function maskApiKey(apiKey: string) {
   return `${visiblePrefix}-${'•'.repeat(12)}`;
 }
 
-export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps) {
+export function AnthropicApiKeyManager({ settings, onOpenHelp }: AnthropicApiKeyManagerProps) {
   const [savedApiKey, setSavedApiKey] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [isDirty, setIsDirty] = useState(false);
@@ -200,6 +201,11 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
         <div>
           <h3 className="text-base font-semibold">Anthropic</h3>
           <p className="mt-1 text-xs leading-5 text-neutral-500">Claude API-Schlüssel lokal speichern, Verbindung prüfen und für Optimierungen verwenden.</p>
+          {onOpenHelp && (
+            <button className="mt-2 text-xs font-semibold text-brand hover:underline" type="button" onClick={onOpenHelp}>
+              So erhalten Sie einen Anthropic API-Schlüssel
+            </button>
+          )}
         </div>
         <span className={`shrink-0 rounded px-2.5 py-1 text-xs font-semibold ${isConnected ? 'bg-[#e5f5e8] text-[#23713a]' : 'bg-[#ece8dc] text-neutral-600 dark:bg-[#2b2b29] dark:text-neutral-300'}`}>
           {isConnected ? 'Verbunden' : 'Getrennt'}

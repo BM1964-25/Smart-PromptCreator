@@ -10,9 +10,10 @@ import { db } from '../db/database';
 interface SettingsPanelProps {
   settings?: Settings;
   onClose: () => void;
+  onOpenHelp?: () => void;
 }
 
-export function SettingsPanel({ settings, onClose }: SettingsPanelProps) {
+export function SettingsPanel({ settings, onClose, onOpenHelp }: SettingsPanelProps) {
   const [licenseKey, setLicenseKey] = useState(settings?.license.key || '');
   const [licenseEndpoint, setLicenseEndpoint] = useState('http://127.0.0.1:8787');
 
@@ -42,7 +43,7 @@ export function SettingsPanel({ settings, onClose }: SettingsPanelProps) {
             </select>
           </section>
 
-          <AnthropicApiKeyManager settings={settings} />
+          <AnthropicApiKeyManager settings={settings} onOpenHelp={onOpenHelp} />
 
           <section className="rounded border border-line bg-[#f4f1e8] p-4 shadow-sm dark:border-[#333] dark:bg-[#181817]">
             <h3 className="mb-2 text-sm font-semibold">Lizenz</h3>
