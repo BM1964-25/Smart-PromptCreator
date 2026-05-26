@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 static int exists(const char *path) {
@@ -29,6 +30,28 @@ static const char *find_node(void) {
     if (exists(candidates[i])) return candidates[i];
   }
   return NULL;
+}
+
+static void stop_existing_servers(void) {
+  const char *patterns[] = {
+    "SMART PromptCreator.*server/local-server\\.mjs",
+    "SMART PromtCreator.*server/local-server\\.mjs",
+    "Smart PromtCreator.*server/local-server\\.mjs",
+    NULL
+  };
+
+  for (int i = 0; patterns[i]; i++) {
+    pid_t pid = fork();
+    if (pid == 0) {
+      execl("/usr/bin/pkill", "pkill", "-f", patterns[i], (char *)NULL);
+      _exit(0);
+    }
+    if (pid > 0) {
+      int status = 0;
+      waitpid(pid, &status, 0);
+    }
+  }
+  usleep(300000);
 }
 
 int main(void) {
@@ -81,6 +104,8 @@ int main(void) {
     }
     return 3;
   }
+
+  stop_existing_servers();
 
   pid_t pid = fork();
   if (pid < 0) return 4;

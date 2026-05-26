@@ -72,6 +72,23 @@ export default function App() {
     () => filterPrompts(prompts || [], store.search, store.favoriteOnly, store.activeCategoryId, store.activeTabId),
     [prompts, store.search, store.favoriteOnly, store.activeCategoryId, store.activeTabId]
   );
+  const workspacePromptCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const prompt of prompts || []) {
+      if (!prompt.tabId) continue;
+      counts.set(prompt.tabId, (counts.get(prompt.tabId) || 0) + 1);
+    }
+    return counts;
+  }, [prompts]);
+  const categoryPromptCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const prompt of prompts || []) {
+      if (!prompt.categoryId) continue;
+      counts.set(prompt.categoryId, (counts.get(prompt.categoryId) || 0) + 1);
+    }
+    return counts;
+  }, [prompts]);
+  const activeWorkspacePromptCount = store.activeTabId ? workspacePromptCounts.get(store.activeTabId) || 0 : 0;
 
   const selectedPrompt = prompts?.find((prompt) => prompt.id === store.selectedPromptId) || visiblePrompts[0];
   const activeCategory = categories?.find((category) => category.id === store.activeCategoryId);
@@ -332,6 +349,7 @@ export default function App() {
                         key={tab.id}
                         tab={tab}
                         active={store.activeTabId === tab.id}
+                        promptCount={workspacePromptCounts.get(tab.id!) || 0}
                         onSelect={() => store.setActiveTab(tab.id)}
                         onRename={() => renameTab(tab)}
                         onDelete={() => deleteTab(tab)}
@@ -345,6 +363,8 @@ export default function App() {
           <CategoryNav
             categories={(categories || []).filter((category) => category.tabId === store.activeTabId)}
             activeCategoryId={store.activeCategoryId}
+            categoryPromptCounts={categoryPromptCounts}
+            allPromptCount={activeWorkspacePromptCount}
             onSelect={store.setActiveCategory}
             onCreate={createNamedCategory}
             onRename={renameCategory}
@@ -529,12 +549,14 @@ function NameDialog({
 function SortableTab({
   tab,
   active,
+  promptCount,
   onSelect,
   onRename,
   onDelete
 }: {
   tab: WorkspaceTab;
   active: boolean;
+  promptCount: number;
   onSelect: () => void;
   onRename: () => void;
   onDelete: () => void;
@@ -555,6 +577,7 @@ function SortableTab({
       <button onClick={onSelect} className={`nav-row min-w-0 flex-1 ${active ? 'active' : ''}`}>
         <Folder className="mr-2 shrink-0 text-neutral-500" size={16} />
         <span className="truncate">{tab.name}</span>
+        <span className="ml-2 shrink-0 tabular-nums text-neutral-500 dark:text-neutral-400">({promptCount})</span>
       </button>
       <button
         className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 transition hover:bg-[#ece8dc] hover:text-brand dark:hover:bg-[#2b2b29]"

@@ -8,6 +8,8 @@ import type { Category } from '../types/domain';
 interface CategoryNavProps {
   categories: Category[];
   activeCategoryId?: string;
+  categoryPromptCounts: Map<string, number>;
+  allPromptCount: number;
   onSelect: (id?: string) => void;
   onCreate: () => void;
   onRename: (category: Category) => void;
@@ -15,7 +17,17 @@ interface CategoryNavProps {
   collapsed?: boolean;
 }
 
-export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, onRename, onDelete, collapsed }: CategoryNavProps) {
+export function CategoryNav({
+  categories,
+  activeCategoryId,
+  categoryPromptCounts,
+  allPromptCount,
+  onSelect,
+  onCreate,
+  onRename,
+  onDelete,
+  collapsed
+}: CategoryNavProps) {
   async function reorderCategories(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -37,7 +49,8 @@ export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, 
       </div>
       <button className={`nav-row ${!activeCategoryId ? 'active' : ''}`} onClick={() => onSelect(undefined)}>
         <FolderOpen className="mr-2 shrink-0 text-neutral-500" size={16} />
-        Prompt-Bibliothek
+        <span className="truncate">Alle Kategorien</span>
+        <span className="ml-2 shrink-0 tabular-nums text-neutral-500 dark:text-neutral-400">({allPromptCount})</span>
       </button>
       <DndContext collisionDetection={closestCenter} onDragEnd={reorderCategories}>
         <SortableContext items={categories.map((category) => category.id!)} strategy={verticalListSortingStrategy}>
@@ -46,6 +59,7 @@ export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, 
               key={category.id}
               category={category}
               active={activeCategoryId === category.id}
+              promptCount={categoryPromptCounts.get(category.id!) || 0}
               onSelect={() => onSelect(category.id)}
               onRename={() => onRename(category)}
               onDelete={() => onDelete(category)}
@@ -60,12 +74,14 @@ export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, 
 function SortableCategory({
   category,
   active,
+  promptCount,
   onSelect,
   onRename,
   onDelete
 }: {
   category: Category;
   active: boolean;
+  promptCount: number;
   onSelect: () => void;
   onRename: () => void;
   onDelete: () => void;
@@ -86,6 +102,7 @@ function SortableCategory({
       <button className={`nav-row min-w-0 flex-1 ${active ? 'active' : ''}`} onClick={onSelect}>
         <span className="mr-2 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: category.color }} />
         <span className="truncate">{category.name}</span>
+        <span className="ml-2 shrink-0 tabular-nums text-neutral-500 dark:text-neutral-400">({promptCount})</span>
       </button>
       <button
         className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 transition hover:bg-[#ece8dc] hover:text-brand dark:hover:bg-[#2b2b29]"
