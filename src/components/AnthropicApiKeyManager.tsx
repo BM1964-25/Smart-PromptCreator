@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, Plug, Save, Unplug, Wifi } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, Plug, Save, Trash2, Unplug, Wifi } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { db } from '../db/database';
@@ -33,6 +33,7 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
   const [connecting, setConnecting] = useState(false);
   const [checking, setChecking] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({ tone: 'idle', message: 'Noch keine aktive Anthropic-Verbindung.' });
   const selectedModel = normalizeAnthropicModel(settings?.anthropicModel || defaultAnthropicModel);
 
@@ -162,6 +163,30 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
     }
   }
 
+  async function handleDeleteKey() {
+    setDeleting(true);
+    try {
+      await db.settings.update('app', {
+        apiKeys: {
+          ...settings?.apiKeys,
+          anthropic: undefined
+        }
+      });
+      setSavedApiKey('');
+      setInputValue('');
+      setIsDirty(false);
+      setIsVisible(false);
+      setIsConnected(false);
+      setFeedback({ tone: 'info', message: 'Anthropic API-Schlüssel lokal gelöscht.' });
+      toast.message('Anthropic API-Schlüssel gelöscht');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'API-Schlüssel konnte nicht gelöscht werden.';
+      setFeedback({ tone: 'error', message });
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const feedbackStyles: Record<FeedbackTone, string> = {
     idle: 'border-line bg-white text-neutral-600 dark:border-[#3a3a38] dark:bg-[#151515] dark:text-neutral-300',
     info: 'border-[#a8c6be] bg-[#eef7f4] text-[#256f63] dark:border-[#21564c] dark:bg-[#122520] dark:text-[#9dd1c5]',
@@ -215,6 +240,15 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
             }}
           >
             {isVisible ? <EyeOff size={17} /> : <Eye size={17} />}
+          </button>
+          <button
+            className="icon-only"
+            type="button"
+            title="API-Schlüssel löschen"
+            onClick={handleDeleteKey}
+            disabled={deleting || (!savedApiKey && !inputValue)}
+          >
+            {deleting ? <Loader2 className="animate-spin" size={17} /> : <Trash2 size={17} />}
           </button>
         </div>
 
