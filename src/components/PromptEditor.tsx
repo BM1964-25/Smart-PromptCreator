@@ -12,9 +12,12 @@ interface PromptEditorProps {
   settings?: Settings;
   categories: Category[];
   onDelete: (prompt: Prompt) => void;
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
+  onCreatePrompt?: () => void;
 }
 
-export function PromptEditor({ prompt, settings, categories, onDelete }: PromptEditorProps) {
+export function PromptEditor({ prompt, settings, categories, onDelete, emptyStateTitle, emptyStateDescription, onCreatePrompt }: PromptEditorProps) {
   const [provider, setProvider] = useState<AiProvider>('anthropic');
   const [showExpertOptions, setShowExpertOptions] = useState(false);
   const [optimizerPreferences, setOptimizerPreferences] = useState<OptimizerPreferences>(defaultOptimizerPreferences);
@@ -28,7 +31,22 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
   const anthropicModel = normalizeAnthropicModel(settings?.anthropicModel);
 
   if (!prompt) {
-    return <div className="grid place-items-center text-sm text-neutral-500">Erstelle oder importiere einen Eintrag in der Prompt-Bibliothek.</div>;
+    return (
+      <div className="grid place-items-center bg-[#fdfcf8] p-8 text-center dark:bg-[#151515]">
+        <div className="max-w-md rounded border border-dashed border-line bg-white p-6 shadow-sm dark:border-[#333] dark:bg-[#181817]">
+          <Sparkles className="mx-auto mb-3 text-brand" size={26} />
+          <h2 className="text-lg font-semibold">{emptyStateTitle || 'Noch kein Prompt vorhanden'}</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-500">
+            {emptyStateDescription || 'Erstelle oder importiere einen Eintrag in der Prompt-Bibliothek.'}
+          </p>
+          {onCreatePrompt && (
+            <button className="icon-button ai-button mx-auto mt-4" type="button" onClick={onCreatePrompt}>
+              <Sparkles size={16} /> Ersten Prompt erstellen
+            </button>
+          )}
+        </div>
+      </div>
+    );
   }
 
   async function optimize() {
@@ -211,8 +229,9 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
       </header>
 
       <div className="grid min-h-0 grid-cols-2 overflow-hidden">
-        <section className="min-h-0 min-w-0 overflow-y-auto border-r border-line dark:border-[#333]">
-          <div className="grid gap-3 border-b border-line p-3 dark:border-[#333]">
+        <section className="grid min-h-0 min-w-0 grid-rows-[minmax(560px,66%)_minmax(180px,34%)] border-r border-line dark:border-[#333]">
+          <div className="min-h-0 overflow-y-auto border-b border-line p-3 dark:border-[#333]">
+            <div className="grid gap-3">
             <div className="rounded border border-line bg-white px-3 py-2 dark:border-[#333] dark:bg-[#181817]">
               <input
                 value={prompt.title}
@@ -402,6 +421,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
               </div>
             </div>
           </div>
+          </div>
           <div className="flex min-h-0 flex-col p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
@@ -415,54 +435,59 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
             <textarea
               value={prompt.content}
               onChange={(event) => updatePrompt(prompt.id!, { content: event.target.value })}
-              className="h-[360px] min-h-56 resize-y rounded border border-line bg-[#fffefa] p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:bg-white focus:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:text-[#f3f0e8] dark:focus:bg-[#151515]"
+              className="min-h-0 flex-1 resize-none rounded border border-line bg-[#fffefa] p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:bg-white focus:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:text-[#f3f0e8] dark:focus:bg-[#151515]"
               placeholder="Beschreibe hier, was die KI tun soll..."
             />
           </div>
         </section>
 
-        <section className="min-h-0 min-w-0 overflow-y-auto">
-          <div className="grid gap-2 border-b border-line p-3 dark:border-[#333]">
-            <div className="flex items-center gap-2">
-              <button className="icon-button" onClick={() => setShowExpertOptions((current) => !current)}>
-                <Settings2 size={16} /> Expertenmodus
-              </button>
-              <button className="icon-button ai-button ml-auto" onClick={optimize} disabled={busy}>
-                <Sparkles size={16} /> {busy ? 'Optimiert...' : 'Optimieren'}
-              </button>
-            </div>
-            {showExpertOptions && (
-              <div className="grid gap-3 rounded border border-line bg-white p-3 dark:border-[#3a3a38] dark:bg-[#181817]">
-                <label className="grid gap-1 text-xs font-medium text-neutral-500">
-                  Anbieter
-                  <select className="field" value={provider} onChange={(event) => setProvider(event.target.value as AiProvider)}>
-                    <option value="anthropic">Anthropic</option>
-                    <option value="local">Lokal</option>
-                  </select>
-                </label>
-                <div className="rounded border border-line bg-[#f9f8f3] p-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300">
-                  {provider === 'anthropic'
-                    ? 'Anthropic nutzt deinen gespeicherten API-Schlüssel, sendet den Prompt an Claude und erzeugt eine KI-optimierte Version. Dafür ist eine aktive Verbindung erforderlich.'
-                    : 'Lokal verarbeitet den Prompt nur im Browser mit einer eingebauten Vorlage. Es werden keine Inhalte an Anthropic gesendet, die Optimierung ist dafür regelbasiert und weniger kreativ.'}
+        <section className="grid min-h-0 min-w-0 grid-rows-[minmax(560px,66%)_minmax(180px,34%)]">
+          <div className="min-h-0 overflow-y-auto border-b border-line p-3 dark:border-[#333]">
+            <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2">
+              <div className="grid gap-2">
+                <div className="flex items-start justify-between gap-3">
+                  <button className="icon-button" onClick={() => setShowExpertOptions((current) => !current)}>
+                    <Settings2 size={16} /> Expertenmodus
+                  </button>
+                  <div className="mr-[13px] grid w-36 shrink-0 gap-2">
+                    <button className="icon-button ai-button w-full justify-center" onClick={optimize} disabled={busy}>
+                      <Sparkles size={16} /> {busy ? 'Optimiert...' : 'Optimieren'}
+                    </button>
+                  </div>
                 </div>
+                {showExpertOptions && (
+                  <div className="grid gap-3 rounded border border-line bg-white p-3 dark:border-[#3a3a38] dark:bg-[#181817]">
+                    <label className="grid gap-1 text-xs font-medium text-neutral-500">
+                      Anbieter
+                      <select className="field" value={provider} onChange={(event) => setProvider(event.target.value as AiProvider)}>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="local">Lokal</option>
+                      </select>
+                    </label>
+                    <div className="rounded border border-line bg-[#f9f8f3] p-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300">
+                      {provider === 'anthropic'
+                        ? 'Anthropic nutzt deinen gespeicherten API-Schlüssel, sendet den Prompt an Claude und erzeugt eine KI-optimierte Version. Dafür ist eine aktive Verbindung erforderlich.'
+                        : 'Lokal verarbeitet den Prompt nur im Browser mit einer eingebauten Vorlage. Es werden keine Inhalte an Anthropic gesendet, die Optimierung ist dafür regelbasiert und weniger kreativ.'}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-            <div className="grid gap-3 rounded border border-line bg-white p-3 dark:border-[#3a3a38] dark:bg-[#181817]">
+            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3 rounded border border-line bg-white p-3 dark:border-[#3a3a38] dark:bg-[#181817]">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-sm font-semibold">Variantenvergleich</h2>
                   <p className="text-xs text-neutral-500">Kompakte und Premium-Struktur vergleichen, übernehmen und weiter verbessern.</p>
                 </div>
-                <button className="icon-button ai-button shrink-0" onClick={generateVariants} disabled={Boolean(variantBusy)}>
+                <button className="icon-button ai-button w-36 shrink-0 justify-center" onClick={generateVariants} disabled={Boolean(variantBusy)}>
                   <Sparkles size={16} /> {variantBusy === 'all' ? 'Erstellt...' : '2 Varianten'}
                 </button>
               </div>
-              <div className="grid gap-2 xl:grid-cols-2">
+              <div className="grid min-h-0 gap-2 xl:grid-cols-2">
                 {variants.map((variant) => {
                   const stats = getTextStats(variant.content);
                   const isBusy = variantBusy === variant.tone;
                   return (
-                    <article key={variant.tone} className="grid min-h-60 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 rounded border border-line bg-[#f9f8f3] p-3 dark:border-[#333] dark:bg-[#151515]">
+                    <article key={variant.tone} className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 rounded border border-line bg-[#f9f8f3] p-3 dark:border-[#333] dark:bg-[#151515]">
                       <div>
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="text-sm font-semibold">{variant.title}</h3>
@@ -476,7 +501,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
                         </p>
                       </div>
                       <textarea
-                        className="min-h-36 resize-y rounded border border-line bg-white p-3 text-xs leading-5 outline-none focus:border-brand dark:border-[#333] dark:bg-[#111]"
+                        className="min-h-0 resize-none rounded border border-line bg-white p-3 text-xs leading-5 outline-none focus:border-brand dark:border-[#333] dark:bg-[#111]"
                         value={variant.content}
                         onChange={(event) =>
                           updatePrompt(prompt.id!, {
@@ -501,6 +526,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
               </div>
             </div>
           </div>
+          </div>
           <div className="flex min-h-0 flex-col bg-[#faf8f1] p-4 dark:bg-[#171716]">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
@@ -519,7 +545,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
             <textarea
               value={prompt.optimizedContent}
               onChange={(event) => updatePrompt(prompt.id!, { optimizedContent: event.target.value })}
-              className="h-[calc(100vh-255px)] min-h-80 resize-y rounded border border-line bg-white p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:shadow-soft dark:border-[#333] dark:bg-[#111] dark:text-[#f3f0e8]"
+              className="min-h-44 flex-1 resize-none rounded border border-line bg-white p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:shadow-soft dark:border-[#333] dark:bg-[#111] dark:text-[#f3f0e8]"
               placeholder="Hier erscheint die optimierte Version..."
             />
           </div>

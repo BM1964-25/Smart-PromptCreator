@@ -35,7 +35,7 @@ export function PromptList({
 
   if (collapsed) {
     return (
-      <div className="flex min-w-0 flex-col items-center border-r border-line bg-[#f9f8f3] py-3 dark:border-[#333] dark:bg-[#1c1c1b]">
+      <div className="flex min-h-0 min-w-0 flex-col items-center border-r border-line bg-[#f9f8f3] py-3 dark:border-[#333] dark:bg-[#1c1c1b]">
         <button className={collapseButtonClass} title="Prompt-Bibliothek ausklappen" onClick={onToggleCollapsed}>
           <PanelLeftOpen size={16} />
         </button>
@@ -49,7 +49,7 @@ export function PromptList({
   }
 
   return (
-    <div className="min-w-0 border-r border-line bg-[#f9f8f3] dark:border-[#333] dark:bg-[#1c1c1b]">
+    <div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] border-r border-line bg-[#f9f8f3] dark:border-[#333] dark:bg-[#1c1c1b]">
       <div className="grid min-h-[68px] gap-3 border-b border-line px-4 py-3 dark:border-[#333]">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -84,7 +84,20 @@ export function PromptList({
           />
         </div>
       </div>
-      <div className="h-[calc(100vh-116px)] overflow-auto p-2">
+      <div className="min-h-0 overflow-auto p-2">
+        {prompts.length === 0 && (
+          <div className="grid h-full place-items-center rounded border border-dashed border-line bg-white/55 p-5 text-center text-sm text-neutral-500 dark:border-[#333] dark:bg-[#151515]/55">
+            <div>
+              <p className="font-medium text-neutral-700 dark:text-neutral-200">Keine Prompts gefunden</p>
+              <p className="mt-1 text-xs leading-5">Erstelle einen neuen Prompt oder setze Filter und Suche zurück.</p>
+              {filterActive && (
+                <button className="mt-3 text-xs font-semibold text-brand hover:underline" type="button" onClick={onResetFilters}>
+                  Auswahl zurücksetzen
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         {prompts.map((prompt) => {
           const category = categories.find((item) => item.id === prompt.categoryId);
           return (

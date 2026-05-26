@@ -9,11 +9,13 @@ import {
   FileText,
   Filter,
   Folder,
+  GripVertical,
   HardDrive,
   HelpCircle,
   KeyRound,
   Library,
   Moon,
+  Pencil,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
@@ -37,11 +39,20 @@ import { HelpPanel } from './components/HelpPanel';
 import { CategoryNav } from './components/CategoryNav';
 import type { Category, Prompt, WorkspaceTab } from './types/domain';
 
+type NameDialogState = {
+  kind: 'workspace-create' | 'workspace-rename' | 'category-create' | 'category-rename';
+  title: string;
+  label: string;
+  initialValue: string;
+  targetId?: string;
+};
+
 export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [libraryCollapsed, setLibraryCollapsed] = useState(false);
+  const [nameDialog, setNameDialog] = useState<NameDialogState>();
   const tabs = useLiveQuery(() => db.tabs.orderBy('position').toArray(), []);
   const categories = useLiveQuery(() => db.categories.orderBy('position').toArray(), []);
   const prompts = useLiveQuery(() => db.prompts.orderBy('updatedAt').reverse().toArray(), []);
@@ -94,6 +105,77 @@ export default function App() {
     await Promise.all(ordered.map((tab, position) => db.tabs.update(tab.id!, { position })));
   }
 
+  function createWorkspaceTab() {
+    setNameDialog({
+      kind: 'workspace-create',
+      title: 'Arbeitsbereich erstellen',
+      label: 'Name des Arbeitsbereichs',
+      initialValue: 'Neuer Arbeitsbereich'
+    });
+  }
+
+  function renameTab(tab: WorkspaceTab) {
+    if (!tab.id) return;
+    setNameDialog({
+      kind: 'workspace-rename',
+      title: 'Arbeitsbereich umbenennen',
+      label: 'Name des Arbeitsbereichs',
+      initialValue: tab.name,
+      targetId: tab.id
+    });
+  }
+
+  function createNamedCategory() {
+    if (!store.activeTabId) return;
+    setNameDialog({
+      kind: 'category-create',
+      title: 'Kategorie erstellen',
+      label: 'Name der Kategorie',
+      initialValue: 'Neue Kategorie'
+    });
+  }
+
+  function renameCategory(category: Category) {
+    if (!category.id) return;
+    setNameDialog({
+      kind: 'category-rename',
+      title: 'Kategorie umbenennen',
+      label: 'Name der Kategorie',
+      initialValue: category.name,
+      targetId: category.id
+    });
+  }
+
+  async function submitNameDialog(value: string) {
+    if (!nameDialog) return;
+    const name = value.trim();
+    if (!name) return;
+
+    if (nameDialog.kind === 'workspace-create') {
+      const tab = await createTab(name);
+      store.setActiveTab(tab.id);
+      toast.success('Arbeitsbereich erstellt');
+    }
+
+    if (nameDialog.kind === 'workspace-rename' && nameDialog.targetId) {
+      await db.tabs.update(nameDialog.targetId, { name });
+      toast.success('Arbeitsbereich umbenannt');
+    }
+
+    if (nameDialog.kind === 'category-create' && store.activeTabId) {
+      const category = await createCategory(store.activeTabId, name);
+      store.setActiveCategory(category.id);
+      toast.success('Kategorie erstellt');
+    }
+
+    if (nameDialog.kind === 'category-rename' && nameDialog.targetId) {
+      await db.categories.update(nameDialog.targetId, { name });
+      toast.success('Kategorie umbenannt');
+    }
+
+    setNameDialog(undefined);
+  }
+
   async function deletePrompt(prompt: Prompt) {
     if (!prompt.id) return;
     const confirmed = window.confirm(`Soll "${prompt.title}" wirklich aus der Prompt-Bibliothek gelöscht werden?`);
@@ -108,7 +190,7 @@ export default function App() {
 
   async function deleteTab(tab: WorkspaceTab) {
     if (!tab.id) return;
-    const confirmed = window.confirm(`Soll der Tab "${tab.name}" wirklich gelöscht werden? Prompts bleiben erhalten und werden aus diesem Tab gelöst.`);
+    const confirmed = window.confirm(`Soll der Arbeitsbereich "${tab.name}" wirklich gelöscht werden? Prompts bleiben erhalten und werden aus diesem Arbeitsbereich gelöst.`);
     if (!confirmed) return;
 
     const remainingTabs = (tabs || []).filter((item) => item.id !== tab.id);
@@ -123,7 +205,7 @@ export default function App() {
       store.setActiveTab(remainingTabs[0]?.id);
       store.setActiveCategory(undefined);
     }
-    toast.success('Tab gelöscht');
+    toast.success('Arbeitsbereich gelöscht');
   }
 
   async function deleteCategory(category: Category) {
@@ -148,8 +230,15 @@ export default function App() {
     store.setSelectedPrompt(undefined);
   }
 
+  async function createPromptInActiveWorkspace() {
+    const prompt = await createPrompt({ tabId: store.activeTabId, categoryId: store.activeCategoryId });
+    store.setSelectedPrompt(prompt.id);
+    toast.success('Prompt erstellt');
+  }
+
   return (
-    <main className="flex h-screen bg-[#ebe8df] text-ink dark:bg-[#171717] dark:text-[#f3f0e8]">
+    <div className="flex h-screen flex-col overflow-hidden bg-[#ebe8df] text-ink dark:bg-[#171717] dark:text-[#f3f0e8]">
+      <main className="flex min-h-0 flex-1 overflow-hidden">
       <aside
         className={`relative flex shrink-0 flex-col border-r border-line bg-panel transition-[width] duration-200 dark:border-[#333] dark:bg-[#20201f] ${
           sidebarCollapsed ? 'w-20' : 'w-80'
@@ -166,7 +255,10 @@ export default function App() {
             {!sidebarCollapsed && (
             <div className="min-w-0 flex-1">
               <h1 className="whitespace-nowrap text-[22px] font-semibold tracking-normal">SMART PromptCreator</h1>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Lokale Prompt-Bibliothek</p>
+              <p className="text-xs leading-4 text-neutral-500 dark:text-neutral-400">
+                Lokale Prompt-Werkstatt für
+                <span className="block">bessere KI-Ergebnisse</span>
+              </p>
             </div>
             )}
           </div>
@@ -188,7 +280,7 @@ export default function App() {
             <button
               className={`icon-button ${sidebarCollapsed ? 'w-full px-0' : 'flex-1'}`}
               title="Prompt erstellen"
-              onClick={() => createPrompt({ tabId: store.activeTabId, categoryId: store.activeCategoryId })}
+              onClick={createPromptInActiveWorkspace}
             >
               <Plus size={16} /> {!sidebarCollapsed && 'Prompt'}
             </button>
@@ -202,15 +294,10 @@ export default function App() {
 
         <nav className="min-h-0 flex-1 overflow-auto px-3">
           <div className="mb-5 space-y-1">
-            <button className={`sidebar-nav-row active ${sidebarCollapsed ? 'justify-center px-0' : ''}`} title="Bibliothek">
+            <button className={`sidebar-nav-row active ${sidebarCollapsed ? 'justify-center px-0' : ''}`} title="Alle Prompts im aktiven Arbeitsbereich anzeigen" onClick={resetLibrarySelection}>
               <Library size={17} />
-              {!sidebarCollapsed && <span>Bibliothek</span>}
+              {!sidebarCollapsed && <span>Alle Prompts im Arbeitsbereich</span>}
             </button>
-            {!sidebarCollapsed && (
-              <button className="w-full rounded border border-line bg-white px-3 py-2 text-left text-xs font-medium text-neutral-600 transition hover:border-brand hover:text-brand dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300" onClick={resetLibrarySelection}>
-                Auswahl zurücksetzen
-              </button>
-            )}
             <button
               className={`sidebar-nav-row ${store.favoriteOnly ? 'active' : ''} ${sidebarCollapsed ? 'justify-center px-0' : ''}`}
               title="Favoriten"
@@ -232,8 +319,8 @@ export default function App() {
           {!sidebarCollapsed && (
             <>
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">Tabs</span>
-                <button className="icon-only" title="Tab hinzufügen" onClick={() => createTab()}>
+                <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">Arbeitsbereiche</span>
+                <button className="icon-only" title="Arbeitsbereich hinzufügen" onClick={createWorkspaceTab}>
                   <Plus size={15} />
                 </button>
               </div>
@@ -246,6 +333,7 @@ export default function App() {
                         tab={tab}
                         active={store.activeTabId === tab.id}
                         onSelect={() => store.setActiveTab(tab.id)}
+                        onRename={() => renameTab(tab)}
                         onDelete={() => deleteTab(tab)}
                       />
                     ))}
@@ -258,7 +346,8 @@ export default function App() {
             categories={(categories || []).filter((category) => category.tabId === store.activeTabId)}
             activeCategoryId={store.activeCategoryId}
             onSelect={store.setActiveCategory}
-            onCreate={() => store.activeTabId && createCategory(store.activeTabId)}
+            onCreate={createNamedCategory}
+            onRename={renameCategory}
             onDelete={deleteCategory}
             collapsed={sidebarCollapsed}
           />
@@ -290,7 +379,6 @@ export default function App() {
           </div>
 
           {!sidebarCollapsed && (
-            <>
               <div className="rounded border border-line bg-white p-3 text-xs shadow-sm dark:border-[#3a3a38] dark:bg-[#151515]">
                 <div className="mb-2 flex items-center gap-2 font-semibold text-neutral-700 dark:text-neutral-200">
                   <ShieldCheck size={15} />
@@ -303,28 +391,12 @@ export default function App() {
                   <StatusRow icon={<FileText size={14} />} label="Prompt-Bibliothek" value={`${prompts?.length || 0}`} active />
                 </div>
               </div>
-
-              <footer className="space-y-2 text-center text-[11px] leading-5 text-neutral-500 dark:text-neutral-400">
-                <div>
-                  <p className="font-medium text-neutral-600 dark:text-neutral-300">© 2026 BuiltSmart AI</p>
-                  <p>powered by BuiltSmart Hub</p>
-                </div>
-                <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
-                  <a className="hover:text-brand" href="https://www.built-smart-hub.com/impressum" target="_blank" rel="noreferrer">Impressum</a>
-                  <span>|</span>
-                  <a className="hover:text-brand" href="https://www.built-smart-hub.com/datenschutz" target="_blank" rel="noreferrer">Datenschutz</a>
-                  <span>|</span>
-                  <a className="hover:text-brand" href="https://www.built-smart-hub.com/agb" target="_blank" rel="noreferrer">AGB</a>
-                  <a className="basis-full hover:text-brand" href="https://www.built-smart-hub.com/widerrufbelehrung" target="_blank" rel="noreferrer">Widerrufbelehrung</a>
-                </div>
-              </footer>
-            </>
           )}
         </div>
       </aside>
 
       <section
-        className="grid min-w-0 flex-1 transition-[grid-template-columns] duration-200"
+        className="grid min-w-0 flex-1 overflow-hidden transition-[grid-template-columns] duration-200"
         style={{ gridTemplateColumns: libraryCollapsed ? '56px minmax(0, 1fr)' : '360px minmax(0, 1fr)' }}
       >
         <PromptList
@@ -341,12 +413,107 @@ export default function App() {
           collapsed={libraryCollapsed}
           onToggleCollapsed={() => setLibraryCollapsed((current) => !current)}
         />
-        <PromptEditor prompt={selectedPrompt} settings={settings} categories={categories || []} onDelete={deletePrompt} />
+        <PromptEditor
+          prompt={selectedPrompt}
+          settings={settings}
+          categories={categories || []}
+          onDelete={deletePrompt}
+          emptyStateTitle="Dieser Arbeitsbereich ist noch leer"
+          emptyStateDescription="Lege den ersten Prompt in diesem Arbeitsbereich an oder wähle links einen anderen Arbeitsbereich."
+          onCreatePrompt={createPromptInActiveWorkspace}
+        />
       </section>
 
       {showSettings && <SettingsPanel settings={settings} onClose={() => setShowSettings(false)} />}
       {showHelp && <HelpPanel onClose={() => setShowHelp(false)} />}
-    </main>
+      <NameDialog dialog={nameDialog} onClose={() => setNameDialog(undefined)} onSubmit={submitNameDialog} />
+      </main>
+      <AppFooter />
+    </div>
+  );
+}
+
+function AppFooter() {
+  return (
+    <footer className="grid shrink-0 grid-cols-2 gap-4 border-t border-line bg-panel px-5 py-3 text-[11px] leading-5 text-neutral-500 dark:border-[#333] dark:bg-[#20201f] dark:text-neutral-400">
+      <div className="flex min-w-0 items-start gap-3">
+        <img
+          src="/smart-promptcreator-icon.png"
+          alt="SMART PromptCreator"
+          className="h-9 w-9 shrink-0 rounded object-cover"
+          draggable={false}
+        />
+        <div className="min-w-0">
+          <p className="font-semibold text-neutral-700 dark:text-neutral-200">SMART PromptCreator</p>
+          <p className="text-neutral-500 dark:text-neutral-400">Lokale Prompt-Werkstatt für bessere KI-Ergebnisse</p>
+        </div>
+      </div>
+      <div className="min-w-0 text-right">
+        <p className="font-medium text-neutral-600 dark:text-neutral-300">© 2026 SmartBuilt-AI · Powered by BuiltSmart Hub - Bernhard Metzger</p>
+        <div className="flex flex-wrap items-center justify-end gap-x-1">
+          <a className="hover:text-brand" href="https://www.built-smart-hub.com/impressum" target="_blank" rel="noreferrer">Impressum</a>
+          <span>|</span>
+          <a className="hover:text-brand" href="https://www.built-smart-hub.com/datenschutz" target="_blank" rel="noreferrer">Datenschutz</a>
+          <span>|</span>
+          <a className="hover:text-brand" href="https://www.built-smart-hub.com/agb" target="_blank" rel="noreferrer">AGB</a>
+          <span>|</span>
+          <a className="hover:text-brand" href="https://www.built-smart-hub.com/widerrufsbelehrung" target="_blank" rel="noreferrer">Widerrufsbelehrung</a>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function NameDialog({
+  dialog,
+  onClose,
+  onSubmit
+}: {
+  dialog?: NameDialogState;
+  onClose: () => void;
+  onSubmit: (value: string) => void;
+}) {
+  const [value, setValue] = useState(dialog?.initialValue || '');
+
+  useEffect(() => {
+    setValue(dialog?.initialValue || '');
+  }, [dialog]);
+
+  if (!dialog) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-6">
+      <form
+        className="grid w-full max-w-md gap-4 rounded border border-line bg-[#fdfcf8] p-5 shadow-soft dark:border-[#333] dark:bg-[#20201f]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit(value);
+        }}
+      >
+        <div>
+          <h2 className="text-lg font-semibold">{dialog.title}</h2>
+          <p className="text-xs text-neutral-500">Der Name wird direkt in der Sidebar angezeigt.</p>
+        </div>
+        <label className="grid gap-1 text-xs font-medium text-neutral-500">
+          {dialog.label}
+          <input
+            autoFocus
+            className="field"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            onFocus={(event) => event.target.select()}
+          />
+        </label>
+        <div className="flex justify-end gap-2">
+          <button className="icon-button" type="button" onClick={onClose}>
+            Abbrechen
+          </button>
+          <button className="icon-button ai-button" type="submit" disabled={!value.trim()}>
+            Speichern
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -354,11 +521,13 @@ function SortableTab({
   tab,
   active,
   onSelect,
+  onRename,
   onDelete
 }: {
   tab: WorkspaceTab;
   active: boolean;
   onSelect: () => void;
+  onRename: () => void;
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: tab.id! });
@@ -366,13 +535,31 @@ function SortableTab({
 
   return (
     <div ref={setNodeRef} style={style} className="group flex items-center gap-1">
-      <button {...attributes} {...listeners} onClick={onSelect} className={`nav-row min-w-0 flex-1 ${active ? 'active' : ''}`}>
+      <button
+        {...attributes}
+        {...listeners}
+        className="grid h-8 w-6 shrink-0 cursor-grab place-items-center rounded text-neutral-300 transition hover:bg-[#ece8dc] hover:text-neutral-600 active:cursor-grabbing dark:hover:bg-[#2b2b29] dark:hover:text-neutral-200"
+        title="Arbeitsbereich verschieben"
+      >
+        <GripVertical size={14} />
+      </button>
+      <button onClick={onSelect} className={`nav-row min-w-0 flex-1 ${active ? 'active' : ''}`}>
         <Folder className="mr-2 shrink-0 text-neutral-500" size={16} />
         <span className="truncate">{tab.name}</span>
       </button>
       <button
-        className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 opacity-0 transition hover:bg-[#f3ece8] hover:text-[#a33a2d] group-hover:opacity-100 focus:opacity-100 dark:hover:bg-[#2b1714]"
-        title="Tab löschen"
+        className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 transition hover:bg-[#ece8dc] hover:text-brand dark:hover:bg-[#2b2b29]"
+        title="Arbeitsbereich umbenennen"
+        onClick={(event) => {
+          event.stopPropagation();
+          onRename();
+        }}
+      >
+        <Pencil size={14} />
+      </button>
+      <button
+        className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 transition hover:bg-[#f3ece8] hover:text-[#a33a2d] dark:hover:bg-[#2b1714]"
+        title="Arbeitsbereich löschen"
         onClick={(event) => {
           event.stopPropagation();
           onDelete();

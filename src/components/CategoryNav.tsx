@@ -1,4 +1,4 @@
-import { FolderOpen, GripVertical, Plus, Trash2 } from 'lucide-react';
+import { FolderOpen, GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -10,11 +10,12 @@ interface CategoryNavProps {
   activeCategoryId?: string;
   onSelect: (id?: string) => void;
   onCreate: () => void;
+  onRename: (category: Category) => void;
   onDelete: (category: Category) => void;
   collapsed?: boolean;
 }
 
-export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, onDelete, collapsed }: CategoryNavProps) {
+export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, onRename, onDelete, collapsed }: CategoryNavProps) {
   async function reorderCategories(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -46,6 +47,7 @@ export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, 
               category={category}
               active={activeCategoryId === category.id}
               onSelect={() => onSelect(category.id)}
+              onRename={() => onRename(category)}
               onDelete={() => onDelete(category)}
             />
           ))}
@@ -59,11 +61,13 @@ function SortableCategory({
   category,
   active,
   onSelect,
+  onRename,
   onDelete
 }: {
   category: Category;
   active: boolean;
   onSelect: () => void;
+  onRename: () => void;
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: category.id! });
@@ -84,7 +88,17 @@ function SortableCategory({
         <span className="truncate">{category.name}</span>
       </button>
       <button
-        className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 opacity-0 transition hover:bg-[#f3ece8] hover:text-[#a33a2d] group-hover:opacity-100 focus:opacity-100 dark:hover:bg-[#2b1714]"
+        className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 transition hover:bg-[#ece8dc] hover:text-brand dark:hover:bg-[#2b2b29]"
+        title="Kategorie umbenennen"
+        onClick={(event) => {
+          event.stopPropagation();
+          onRename();
+        }}
+      >
+        <Pencil size={14} />
+      </button>
+      <button
+        className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 transition hover:bg-[#f3ece8] hover:text-[#a33a2d] dark:hover:bg-[#2b1714]"
         title="Kategorie löschen"
         onClick={(event) => {
           event.stopPropagation();

@@ -98,7 +98,7 @@ export async function duplicatePrompt(prompt: Prompt) {
   });
 }
 
-export async function createTab(name = 'Neuer Tab') {
+export async function createTab(name = 'Neuer Arbeitsbereich') {
   const count = await db.tabs.count();
   const tab: WorkspaceTab = { id: crypto.randomUUID(), name, position: count };
   await db.tabs.add(tab);
