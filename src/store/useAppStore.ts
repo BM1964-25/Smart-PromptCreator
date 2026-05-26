@@ -21,7 +21,7 @@ export const useAppStore = create<AppState>((set) => ({
   favoriteOnly: false,
   optimizerMode: 'gpt',
   setActiveTab: (activeTabId) => set({ activeTabId, activeCategoryId: undefined, selectedPromptId: undefined }),
-  setActiveCategory: (activeCategoryId) => set({ activeCategoryId }),
+  setActiveCategory: (activeCategoryId) => set({ activeCategoryId, selectedPromptId: undefined }),
   setSelectedPrompt: (selectedPromptId) => set({ selectedPromptId }),
   setSearch: (search) => set({ search }),
   setFavoriteOnly: (favoriteOnly) => set({ favoriteOnly }),

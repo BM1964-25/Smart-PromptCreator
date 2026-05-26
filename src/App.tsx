@@ -41,6 +41,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [libraryCollapsed, setLibraryCollapsed] = useState(false);
   const tabs = useLiveQuery(() => db.tabs.orderBy('position').toArray(), []);
   const categories = useLiveQuery(() => db.categories.orderBy('position').toArray(), []);
   const prompts = useLiveQuery(() => db.prompts.orderBy('updatedAt').reverse().toArray(), []);
@@ -62,6 +63,7 @@ export default function App() {
   );
 
   const selectedPrompt = prompts?.find((prompt) => prompt.id === store.selectedPromptId) || visiblePrompts[0];
+  const activeCategory = categories?.find((category) => category.id === store.activeCategoryId);
   const licenseStatus = settings?.license.status || 'inactive';
   const anthropicReady = Boolean(settings?.apiKeys.anthropic);
 
@@ -94,19 +96,19 @@ export default function App() {
 
   async function deletePrompt(prompt: Prompt) {
     if (!prompt.id) return;
-    const confirmed = window.confirm(`Soll "${prompt.title}" wirklich aus der Prompt-Bibliothek geloescht werden?`);
+    const confirmed = window.confirm(`Soll "${prompt.title}" wirklich aus der Prompt-Bibliothek gelöscht werden?`);
     if (!confirmed) return;
 
     await db.prompts.delete(prompt.id);
     const remainingPrompts = (prompts || []).filter((item) => item.id !== prompt.id);
     const nextPrompt = remainingPrompts[0];
     store.setSelectedPrompt(nextPrompt?.id);
-    toast.success('Eintrag geloescht');
+    toast.success('Eintrag gelöscht');
   }
 
   async function deleteTab(tab: WorkspaceTab) {
     if (!tab.id) return;
-    const confirmed = window.confirm(`Soll der Tab "${tab.name}" wirklich geloescht werden? Prompts bleiben erhalten und werden aus diesem Tab geloest.`);
+    const confirmed = window.confirm(`Soll der Tab "${tab.name}" wirklich gelöscht werden? Prompts bleiben erhalten und werden aus diesem Tab gelöst.`);
     if (!confirmed) return;
 
     const remainingTabs = (tabs || []).filter((item) => item.id !== tab.id);
@@ -121,12 +123,12 @@ export default function App() {
       store.setActiveTab(remainingTabs[0]?.id);
       store.setActiveCategory(undefined);
     }
-    toast.success('Tab geloescht');
+    toast.success('Tab gelöscht');
   }
 
   async function deleteCategory(category: Category) {
     if (!category.id) return;
-    const confirmed = window.confirm(`Soll die Kategorie "${category.name}" wirklich geloescht werden? Prompts bleiben erhalten.`);
+    const confirmed = window.confirm(`Soll die Kategorie "${category.name}" wirklich gelöscht werden? Prompts bleiben erhalten.`);
     if (!confirmed) return;
 
     await db.transaction('rw', db.categories, db.prompts, async () => {
@@ -136,7 +138,14 @@ export default function App() {
     });
 
     if (store.activeCategoryId === category.id) store.setActiveCategory(undefined);
-    toast.success('Kategorie geloescht');
+    toast.success('Kategorie gelöscht');
+  }
+
+  function resetLibrarySelection() {
+    store.setActiveCategory(undefined);
+    store.setSearch('');
+    store.setFavoriteOnly(false);
+    store.setSelectedPrompt(undefined);
   }
 
   return (
@@ -146,7 +155,7 @@ export default function App() {
           sidebarCollapsed ? 'w-20' : 'w-80'
         }`}
       >
-        <div className="border-b border-line p-4 dark:border-[#333]">
+        <div className="flex min-h-[68px] items-center border-b border-line px-4 py-3 dark:border-[#333]">
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <img
               src="/smart-promptcreator-icon.png"
@@ -197,6 +206,11 @@ export default function App() {
               <Library size={17} />
               {!sidebarCollapsed && <span>Bibliothek</span>}
             </button>
+            {!sidebarCollapsed && (
+              <button className="w-full rounded border border-line bg-white px-3 py-2 text-left text-xs font-medium text-neutral-600 transition hover:border-brand hover:text-brand dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300" onClick={resetLibrarySelection}>
+                Auswahl zurücksetzen
+              </button>
+            )}
             <button
               className={`sidebar-nav-row ${store.favoriteOnly ? 'active' : ''} ${sidebarCollapsed ? 'justify-center px-0' : ''}`}
               title="Favoriten"
@@ -219,7 +233,7 @@ export default function App() {
             <>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">Tabs</span>
-                <button className="icon-only" title="Tab hinzufuegen" onClick={() => createTab()}>
+                <button className="icon-only" title="Tab hinzufügen" onClick={() => createTab()}>
                   <Plus size={15} />
                 </button>
               </div>
@@ -309,15 +323,23 @@ export default function App() {
         </div>
       </aside>
 
-      <section className="grid min-w-0 flex-1 grid-cols-[360px_minmax(0,1fr)]">
+      <section
+        className="grid min-w-0 flex-1 transition-[grid-template-columns] duration-200"
+        style={{ gridTemplateColumns: libraryCollapsed ? '56px minmax(0, 1fr)' : '360px minmax(0, 1fr)' }}
+      >
         <PromptList
           prompts={visiblePrompts}
           categories={categories || []}
           selectedId={selectedPrompt?.id}
+          activeCategory={activeCategory}
+          favoriteOnly={store.favoriteOnly}
           search={store.search}
           onSearchChange={store.setSearch}
           onSelect={store.setSelectedPrompt}
           onDelete={deletePrompt}
+          onResetFilters={resetLibrarySelection}
+          collapsed={libraryCollapsed}
+          onToggleCollapsed={() => setLibraryCollapsed((current) => !current)}
         />
         <PromptEditor prompt={selectedPrompt} settings={settings} categories={categories || []} onDelete={deletePrompt} />
       </section>
@@ -350,7 +372,7 @@ function SortableTab({
       </button>
       <button
         className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 opacity-0 transition hover:bg-[#f3ece8] hover:text-[#a33a2d] group-hover:opacity-100 focus:opacity-100 dark:hover:bg-[#2b1714]"
-        title="Tab loeschen"
+        title="Tab löschen"
         onClick={(event) => {
           event.stopPropagation();
           onDelete();

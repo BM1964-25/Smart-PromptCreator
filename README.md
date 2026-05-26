@@ -1,8 +1,8 @@
 # SMART PromptCreator
 
-Browserbasierte lokale KI-Arbeitsoberflaeche zur Verwaltung, Optimierung und Organisation von Prompts.
+Browserbasierte lokale KI-Arbeitsoberfläche zur Verwaltung, Optimierung und Organisation von Prompts.
 
-Die App ist keine Electron- oder Tauri-Desktop-App. Sie laeuft lokal im Browser und wird ueber einen kleinen Node.js-Server gestartet. Der Server liefert die App-Dateien aus und leitet KI-Anfragen ueber einen lokalen Proxy an Anthropic weiter.
+Die App ist keine Electron- oder Tauri-Desktop-App. Sie läuft lokal im Browser und wird über einen kleinen Node.js-Server gestartet. Der Server liefert die App-Dateien aus und leitet KI-Anfragen über einen lokalen Proxy an Anthropic weiter.
 
 ## Nutzerfreundlicher Start
 
@@ -22,7 +22,7 @@ npm run launcher:mac
 dist-launcher/SMART PromptCreator.app
 ```
 
-Der Launcher startet den lokalen Server im Hintergrund und oeffnet automatisch den Browser. Es ist kein sichtbares Terminalfenster notwendig.
+Der Launcher startet den lokalen Server im Hintergrund und öffnet automatisch den Browser. Es ist kein sichtbares Terminalfenster notwendig.
 
 ### Windows
 
@@ -39,7 +39,7 @@ npm run build
 launchers/windows/Start-SMART-PromptCreator.vbs
 ```
 
-Der Starter laeuft ohne dauerhaft sichtbares Konsolenfenster, startet den lokalen Server und oeffnet den Browser.
+Der Starter läuft ohne dauerhaft sichtbares Konsolenfenster, startet den lokalen Server und öffnet den Browser.
 
 ## Technischer Start
 
@@ -55,7 +55,7 @@ Die App ist danach lokal erreichbar unter:
 http://127.0.0.1:48241/
 ```
 
-Der Port `48241` ist fuer SMART PromptCreator reserviert.
+Der Port `48241` ist für SMART PromptCreator reserviert.
 
 ## Lokaler KI-Proxy
 
@@ -64,13 +64,13 @@ Der lokale Server stellt diese Endpunkte bereit:
 - `GET /api/health`
 - `POST /api/anthropic/messages`
 
-Das Frontend erkennt automatisch, ob es direkt ueber `http://127.0.0.1:48241/` laeuft. Wenn es aus einem anderen Kontext geoeffnet wird, nutzt es automatisch:
+Das Frontend erkennt automatisch, ob es direkt über `http://127.0.0.1:48241/` läuft. Wenn es aus einem anderen Kontext geöffnet wird, nutzt es automatisch:
 
 ```text
 http://127.0.0.1:48241/api/...
 ```
 
-Anthropic API-Keys werden nicht in eine Cloud-Datenbank geschrieben. Der lokale Proxy speichert den Key nicht dauerhaft, sondern leitet ihn nur fuer die konkrete Anfrage an Anthropic weiter.
+Anthropic API-Keys werden nicht in eine Cloud-Datenbank geschrieben. Der lokale Proxy speichert den Key nicht dauerhaft, sondern leitet ihn nur für die konkrete Anfrage an Anthropic weiter.
 
 ## Logs
 
@@ -84,7 +84,7 @@ Der Ordner wird nicht versioniert.
 
 ## Datenschutz
 
-Prompts, Kategorien, Tabs, Einstellungen und der verschluesselte Anthropic API-Key bleiben lokal in IndexedDB. Netzwerkzugriffe passieren nur bei expliziter Anthropic-Optimierung oder Metadaten-Erstellung. Es gibt keine Cloud-Datenbank und keine Telemetrie.
+Prompts, Kategorien, Tabs, Einstellungen und der verschlüsselte Anthropic API-Key bleiben lokal in IndexedDB. Netzwerkzugriffe passieren nur bei expliziter Anthropic-Optimierung oder Metadaten-Erstellung. Es gibt keine Cloud-Datenbank und keine Telemetrie.
 
 ## Entwicklung
 
@@ -106,7 +106,7 @@ Lokaler Produktionsserver:
 npm start
 ```
 
-Lizenz-Backend fuer Entwicklung:
+Lizenz-Backend für Entwicklung:
 
 ```bash
 cp .env.example .env

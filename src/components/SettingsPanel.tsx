@@ -18,7 +18,7 @@ export function SettingsPanel({ settings, onClose }: SettingsPanelProps) {
 
   async function activateLicense() {
     const result = await validateLicense(licenseKey, licenseEndpoint);
-    toast.success(result.valid ? 'Lizenz aktiviert' : 'Lizenz ungueltig');
+    toast.success(result.valid ? 'Lizenz aktiviert' : 'Lizenz ungültig');
   }
 
   return (
@@ -47,7 +47,7 @@ export function SettingsPanel({ settings, onClose }: SettingsPanelProps) {
           <section>
             <h3 className="mb-2 text-sm font-semibold">Lizenz</h3>
             <div className="grid grid-cols-[1fr_180px_auto] gap-2">
-              <input className="field" value={licenseKey} onChange={(event) => setLicenseKey(event.target.value)} placeholder="Lizenzschluessel" />
+              <input className="field" value={licenseKey} onChange={(event) => setLicenseKey(event.target.value)} placeholder="Lizenzschlüssel" />
               <input className="field" value={licenseEndpoint} onChange={(event) => setLicenseEndpoint(event.target.value)} />
               <button className="icon-button" onClick={activateLicense}>Aktivieren</button>
             </div>

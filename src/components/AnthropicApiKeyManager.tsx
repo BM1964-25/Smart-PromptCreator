@@ -47,8 +47,8 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
       setIsConnected(false);
       setFeedback(
         decrypted
-          ? { tone: 'info', message: 'Anthropic API-Schluessel ist lokal verschluesselt gespeichert.' }
-          : { tone: 'idle', message: 'Noch kein Anthropic API-Schluessel gespeichert.' }
+          ? { tone: 'info', message: 'Anthropic API-Schlüssel ist lokal verschlüsselt gespeichert.' }
+          : { tone: 'idle', message: 'Noch kein Anthropic API-Schlüssel gespeichert.' }
       );
     }
 
@@ -82,11 +82,11 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
   async function handleSave() {
     const nextKey = inputValue.trim();
     if (!nextKey) {
-      setFeedback({ tone: 'error', message: 'Bitte einen Anthropic API-Schluessel eingeben.' });
+      setFeedback({ tone: 'error', message: 'Bitte einen Anthropic API-Schlüssel eingeben.' });
       return;
     }
     if (!nextKey.startsWith('sk-ant-')) {
-      setFeedback({ tone: 'error', message: 'Der Schluessel sollte mit sk-ant- beginnen.' });
+      setFeedback({ tone: 'error', message: 'Der Schlüssel sollte mit sk-ant- beginnen.' });
       return;
     }
 
@@ -101,8 +101,8 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
       setSavedApiKey(nextKey);
       setInputValue(nextKey);
       setIsDirty(false);
-      setFeedback({ tone: 'success', message: 'Anthropic API-Schluessel lokal verschluesselt gespeichert.' });
-      toast.success('Anthropic API-Schluessel gespeichert');
+      setFeedback({ tone: 'success', message: 'Anthropic API-Schlüssel lokal verschlüsselt gespeichert.' });
+      toast.success('Anthropic API-Schlüssel gespeichert');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Speichern fehlgeschlagen.';
       setFeedback({ tone: 'error', message });
@@ -113,13 +113,13 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
 
   async function handleConnect() {
     if (!activeApiKey) {
-      setFeedback({ tone: 'error', message: 'Bitte zuerst einen Anthropic API-Schluessel speichern oder eingeben.' });
+      setFeedback({ tone: 'error', message: 'Bitte zuerst einen Anthropic API-Schlüssel speichern oder eingeben.' });
       return;
     }
 
     setConnecting(true);
     try {
-      setFeedback({ tone: 'info', message: 'Anthropic-Verbindung wird hergestellt und geprueft...' });
+      setFeedback({ tone: 'info', message: 'Anthropic-Verbindung wird hergestellt und geprüft...' });
       const result = await testAnthropicConnection(activeApiKey);
       setIsConnected(result.ok);
       setFeedback({ tone: result.ok ? 'success' : 'error', message: result.message });
@@ -131,12 +131,12 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
 
   async function handleCheckConnection() {
     if (!activeApiKey) {
-      setFeedback({ tone: 'error', message: 'Bitte zuerst einen Anthropic API-Schluessel eingeben.' });
+      setFeedback({ tone: 'error', message: 'Bitte zuerst einen Anthropic API-Schlüssel eingeben.' });
       return;
     }
 
     setChecking(true);
-    setFeedback({ tone: 'info', message: 'Anthropic-Verbindung wird geprueft...' });
+    setFeedback({ tone: 'info', message: 'Anthropic-Verbindung wird geprüft...' });
     const result = await testAnthropicConnection(activeApiKey);
     setIsConnected(result.ok);
     setFeedback({ tone: result.ok ? 'success' : 'error', message: result.message });
@@ -148,7 +148,7 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
     setDisconnecting(true);
     try {
       setIsConnected(false);
-      setFeedback({ tone: 'info', message: 'Anthropic-Verbindung getrennt. Der gespeicherte Schluessel bleibt erhalten.' });
+      setFeedback({ tone: 'info', message: 'Anthropic-Verbindung getrennt. Der gespeicherte Schlüssel bleibt erhalten.' });
       toast.message('Anthropic-Verbindung getrennt');
     } finally {
       setDisconnecting(false);
@@ -167,7 +167,7 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">Anthropic</h3>
-          <p className="text-xs text-neutral-500">Claude API-Schluessel lokal verwalten und Verbindung testen.</p>
+          <p className="text-xs text-neutral-500">Claude API-Schlüssel lokal verwalten und Verbindung testen.</p>
         </div>
         <span className={`rounded px-2 py-1 text-xs font-medium ${isConnected ? 'bg-[#e5f5e8] text-[#23713a]' : 'bg-[#ece8dc] text-neutral-600 dark:bg-[#2b2b29] dark:text-neutral-300'}`}>
           {isConnected ? 'Verbunden' : 'Getrennt'}
@@ -189,7 +189,7 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
           <button
             className="icon-only"
             type="button"
-            title={isVisible ? 'API-Schluessel verbergen' : 'API-Schluessel anzeigen'}
+            title={isVisible ? 'API-Schlüssel verbergen' : 'API-Schlüssel anzeigen'}
             onClick={() => {
               setInputValue(savedApiKey || inputValue);
               setIsDirty(true);

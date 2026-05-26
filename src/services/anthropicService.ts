@@ -48,7 +48,7 @@ export async function optimizeWithAnthropic(apiKey: string, content: string, pre
 
 export async function testAnthropicConnection(apiKey: string): Promise<AnthropicTestResult> {
   if (!apiKey.trim()) {
-    return { ok: false, message: 'Bitte zuerst einen Anthropic API-Schluessel eingeben.' };
+    return { ok: false, message: 'Bitte zuerst einen Anthropic API-Schlüssel eingeben.' };
   }
 
   try {
@@ -65,12 +65,12 @@ export async function testAnthropicConnection(apiKey: string): Promise<Anthropic
     const text = data?.content?.[0]?.text || '';
     return {
       ok: text.toLowerCase().includes('connection-ok'),
-      message: text ? 'Verbindung erfolgreich geprueft.' : 'Verbindung hergestellt, aber ohne Testantwort.'
+      message: text ? 'Verbindung erfolgreich geprüft.' : 'Verbindung hergestellt, aber ohne Testantwort.'
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unbekannter Netzwerkfehler';
     const corsHint = message.toLowerCase().includes('failed to fetch')
-      ? 'Der lokale KI-Proxy ist nicht erreichbar. Bitte die App ueber den Starter oder mit npm start starten.'
+      ? 'Der lokale KI-Proxy ist nicht erreichbar. Bitte die App über den Starter oder mit npm start starten.'
       : message;
     return { ok: false, message: corsHint };
   }
@@ -89,7 +89,7 @@ export async function suggestPromptMetadataWithAnthropic(
     max_tokens: 450,
     temperature: 0.2,
     system:
-      'Du kategorisierst Prompts fuer eine lokale Prompt-Bibliothek. Antworte ausschliesslich mit validem JSON ohne Markdown.',
+      'Du kategorisierst Prompts für eine lokale Prompt-Bibliothek. Antworte ausschließlich mit validem JSON ohne Markdown.',
     messages: [
       {
         role: 'user',
@@ -98,7 +98,7 @@ export async function suggestPromptMetadataWithAnthropic(
           `Vorhandene Kategorien: ${knownCategories}`,
           '',
           'Regeln:',
-          '- Waehle wenn sinnvoll eine vorhandene Kategorie.',
+          '- Wähle wenn sinnvoll eine vorhandene Kategorie.',
           '- Wenn keine vorhandene Kategorie passt, schlage eine kurze neue Kategorie vor.',
           '- Erzeuge eine knappe Beschreibung in einem Satz.',
           '- Erzeuge 3 bis 6 kurze Tags, lowercase, ohne #, keine Duplikate.',

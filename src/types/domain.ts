@@ -24,6 +24,7 @@ export interface Prompt {
   description: string;
   content: string;
   optimizedContent: string;
+  variants?: PromptVariant[];
   categoryId: string;
   tabId: string;
   tags: string[];
@@ -34,10 +35,30 @@ export interface Prompt {
   updatedAt: string;
 }
 
+export type PromptVariantTone = 'compact' | 'premium';
+
+export interface PromptVariant {
+  id: string;
+  tone: PromptVariantTone;
+  title: string;
+  goal: string;
+  description: string;
+  content: string;
+  updatedAt: string;
+}
+
 export interface PromptRevision {
   id: string;
+  title?: string;
+  description?: string;
   content: string;
   optimizedContent: string;
+  variants?: PromptVariant[];
+  categoryId?: string;
+  tabId?: string;
+  tags?: string[];
+  favorite?: boolean;
+  version?: number;
   createdAt: string;
 }
 

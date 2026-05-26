@@ -6,7 +6,7 @@ export async function validateLicense(licenseKey: string, endpoint: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ licenseKey })
   });
-  if (!response.ok) throw new Error('Lizenzpruefung fehlgeschlagen.');
+  if (!response.ok) throw new Error('Lizenzprüfung fehlgeschlagen.');
   const data = await response.json();
   const settings = await db.settings.get('app');
   await db.settings.put({

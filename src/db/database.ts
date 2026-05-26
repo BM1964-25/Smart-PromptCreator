@@ -3,6 +3,7 @@ import type { Category, Prompt, Settings, WorkspaceTab } from '../types/domain';
 
 const now = () => new Date().toISOString();
 const samplePromptSeedKey = 'spc.samplePrompts.v2';
+const germanUmlautMigrationKey = 'spc.germanUmlauts.v1';
 
 export class PromptManagerDatabase extends Dexie {
   prompts!: Table<Prompt, string>;
@@ -54,6 +55,7 @@ async function seedDatabaseOnce() {
       strategyCategoryId,
       imageCategoryId
     });
+    await normalizeExistingGermanText();
     return;
   }
 
@@ -97,6 +99,7 @@ async function seedDatabaseOnce() {
   });
 
   markSamplePromptsSeeded();
+  await normalizeExistingGermanText();
 }
 
 type SamplePromptIds = {
@@ -153,6 +156,100 @@ function markSamplePromptsSeeded() {
   if (typeof localStorage !== 'undefined') localStorage.setItem(samplePromptSeedKey, 'done');
 }
 
+async function normalizeExistingGermanText() {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem(germanUmlautMigrationKey) === 'done') return;
+
+  const prompts = await db.prompts.toArray();
+  await db.transaction('rw', db.prompts, async () => {
+    for (const prompt of prompts) {
+      const nextPrompt: Prompt = {
+        ...prompt,
+        title: normalizeGermanText(prompt.title),
+        description: normalizeGermanText(prompt.description),
+        content: normalizeGermanText(prompt.content),
+        optimizedContent: normalizeGermanText(prompt.optimizedContent),
+        variants: prompt.variants?.map((variant) => ({
+          ...variant,
+          title: normalizeGermanText(variant.title),
+          description: normalizeGermanText(variant.description),
+          content: normalizeGermanText(variant.content)
+        })),
+        history: prompt.history.map((revision) => ({
+          ...revision,
+          content: normalizeGermanText(revision.content),
+          optimizedContent: normalizeGermanText(revision.optimizedContent)
+        }))
+      };
+
+      if (JSON.stringify(nextPrompt) !== JSON.stringify(prompt)) {
+        await db.prompts.put(nextPrompt);
+      }
+    }
+  });
+
+  if (typeof localStorage !== 'undefined') localStorage.setItem(germanUmlautMigrationKey, 'done');
+}
+
+function normalizeGermanText(value: string) {
+  const replacements: Array<[string, string]> = [
+    ['ueber', 'über'],
+    ['Ueber', 'Über'],
+    ['fuer', 'für'],
+    ['Fuer', 'Für'],
+    ['Schluessel', 'Schlüssel'],
+    ['schluessel', 'schlüssel'],
+    ['verschluesselt', 'verschlüsselt'],
+    ['gueltig', 'gültig'],
+    ['ungueltig', 'ungültig'],
+    ['geprueft', 'geprüft'],
+    ['pruefen', 'prüfen'],
+    ['pruefe', 'prüfe'],
+    ['waehlen', 'wählen'],
+    ['Waehle', 'Wähle'],
+    ['ausfuehrlich', 'ausführlich'],
+    ['Ausfuehrlich', 'Ausführlich'],
+    ['ausschliesslich', 'ausschließlich'],
+    ['ueberzeugend', 'überzeugend'],
+    ['Unterstuetzung', 'Unterstützung'],
+    ['praezise', 'präzise'],
+    ['Praezise', 'Präzise'],
+    ['Praezision', 'Präzision'],
+    ['Luecken', 'Lücken'],
+    ['ergaenzen', 'ergänzen'],
+    ['ergaenze', 'ergänze'],
+    ['verlaesslich', 'verlässlich'],
+    ['Rueckfragen', 'Rückfragen'],
+    ['Rueckfrage', 'Rückfrage'],
+    ['Erklaerung', 'Erklärung'],
+    ['Staerke', 'Stärke'],
+    ['geloescht', 'gelöscht'],
+    ['loeschen', 'löschen'],
+    ['hinzufuegen', 'hinzufügen'],
+    ['koennen', 'können'],
+    ['benoetigt', 'benötigt'],
+    ['duerfen', 'dürfen'],
+    ['Vorschlaege', 'Vorschläge'],
+    ['Regelmaessig', 'Regelmäßig'],
+    ['groesseren', 'größeren'],
+    ['Aufraeumarbeiten', 'Aufräumarbeiten'],
+    ['sorgfaeltig', 'sorgfältig'],
+    ['spaeter', 'später'],
+    ['Eintraege', 'Einträge'],
+    ['Faelligkeiten', 'Fälligkeiten'],
+    ['naechste', 'nächste'],
+    ['Massnahmen', 'Maßnahmen'],
+    ['Gegenmassnahme', 'Gegenmaßnahme'],
+    ['Fruehwarn', 'Frühwarn'],
+    ['Rueckmelde', 'Rückmelde'],
+    ['hoeflicher', 'höflicher'],
+    ['Suchbeduerfnis', 'Suchbedürfnis'],
+    ['Laenge', 'Länge'],
+    ['Absaetze', 'Absätze']
+  ];
+
+  return replacements.reduce((text, [from, to]) => text.split(from).join(to), value);
+}
+
 function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
   const timestamp = now();
   const base = {
@@ -171,7 +268,7 @@ function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
       description: 'Erzeugt einen strukturierten SEO-Blogartikel mit Suchintention, Gliederung und Meta-Daten.',
       content: 'Schreibe einen SEO-Blogartikel zu folgendem Thema: [Thema]. Zielgruppe: [Zielgruppe].',
       optimizedContent:
-        'Erstelle einen professionellen SEO-Blogartikel zum Thema [Thema] fuer die Zielgruppe [Zielgruppe]. Analysiere zuerst Suchintention, Hauptkeyword, Nebenkeywords und Leserbeduerfnis. Erstelle danach eine klare H1/H2/H3-Gliederung, Meta-Title, Meta-Description, Einleitung, Hauptteil mit Beispielen, FAQ-Bereich und Fazit mit Handlungsaufforderung. Schreibe praezise, gut scanbar und ohne Keyword-Stuffing.',
+        'Erstelle einen professionellen SEO-Blogartikel zum Thema [Thema] für die Zielgruppe [Zielgruppe]. Analysiere zuerst Suchintention, Hauptkeyword, Nebenkeywords und Leserbeduerfnis. Erstelle danach eine klare H1/H2/H3-Gliederung, Meta-Title, Meta-Description, Einleitung, Hauptteil mit Beispielen, FAQ-Bereich und Fazit mit Handlungsaufforderung. Schreibe präzise, gut scanbar und ohne Keyword-Stuffing.',
       categoryId: ids.marketingCategoryId,
       tabId: ids.tabId,
       tags: ['seo', 'blog', 'marketing', 'content']
@@ -181,9 +278,9 @@ function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
       id: 'sample-linkedin-thought-leadership',
       title: 'LinkedIn Thought-Leadership-Post',
       description: 'Formuliert einen pointierten LinkedIn-Beitrag mit Hook, Perspektive und CTA.',
-      content: 'Erstelle einen LinkedIn-Post ueber [Thema] fuer [Zielgruppe].',
+      content: 'Erstelle einen LinkedIn-Post über [Thema] für [Zielgruppe].',
       optimizedContent:
-        'Schreibe einen LinkedIn Thought-Leadership-Post ueber [Thema] fuer [Zielgruppe]. Beginne mit einem starken Hook, formuliere eine klare These, erklaere den Nutzen anhand eines konkreten Beispiels und schliesse mit einer Frage oder einem dezenten CTA. Ton: professionell, klar, meinungsstark. Laenge: 1.200 bis 1.800 Zeichen. Verwende kurze Absaetze und maximal drei passende Hashtags.',
+        'Schreibe einen LinkedIn Thought-Leadership-Post über [Thema] für [Zielgruppe]. Beginne mit einem starken Hook, formuliere eine klare These, erklaere den Nutzen anhand eines konkreten Beispiels und schliesse mit einer Frage oder einem dezenten CTA. Ton: professionell, klar, meinungsstark. Länge: 1.200 bis 1.800 Zeichen. Verwende kurze Absätze und maximal drei passende Hashtags.',
       categoryId: ids.marketingCategoryId,
       tabId: ids.tabId,
       tags: ['linkedin', 'social-media', 'positionierung']
@@ -192,10 +289,10 @@ function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
       ...base,
       id: 'sample-customer-email',
       title: 'Professionelle Kunden-E-Mail',
-      description: 'Schreibt eine klare, freundliche Kunden-E-Mail fuer schwierige oder wichtige Situationen.',
+      description: 'Schreibt eine klare, freundliche Kunden-E-Mail für schwierige oder wichtige Situationen.',
       content: 'Formuliere eine Kunden-E-Mail zu folgender Situation: [Situation]. Ziel: [Ziel].',
       optimizedContent:
-        'Formuliere eine professionelle Kunden-E-Mail zur Situation [Situation]. Ziel der E-Mail ist [Ziel]. Schreibe freundlich, verbindlich und klar. Struktur: Betreff, kurze Einordnung, Kernaussage, konkrete naechste Schritte, Termin- oder Rueckmeldewunsch, hoeflicher Abschluss. Vermeide Schuldzuweisungen, Floskeln und unklare Formulierungen.',
+        'Formuliere eine professionelle Kunden-E-Mail zur Situation [Situation]. Ziel der E-Mail ist [Ziel]. Schreibe freundlich, verbindlich und klar. Struktur: Betreff, kurze Einordnung, Kernaussage, konkrete nächste Schritte, Termin- oder Rückmeldewunsch, höflicher Abschluss. Vermeide Schuldzuweisungen, Floskeln und unklare Formulierungen.',
       categoryId: ids.productivityCategoryId,
       tabId: ids.tabId,
       tags: ['e-mail', 'kundenkommunikation', 'produktivität']
@@ -204,10 +301,10 @@ function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
       ...base,
       id: 'sample-meeting-summary',
       title: 'Meeting-Protokoll mit To-dos',
-      description: 'Verdichtet Notizen zu Entscheidungen, Aufgaben, Risiken und naechsten Schritten.',
+      description: 'Verdichtet Notizen zu Entscheidungen, Aufgaben, Risiken und nächsten Schritten.',
       content: 'Erstelle aus diesen Meeting-Notizen ein strukturiertes Protokoll: [Notizen].',
       optimizedContent:
-        'Wandle die folgenden Meeting-Notizen in ein strukturiertes Protokoll um: [Notizen]. Gliedere das Ergebnis in: Kurzfazit, besprochene Punkte, Entscheidungen, offene Fragen, Risiken, Aufgaben mit Verantwortlichen und Faelligkeiten sowie naechste Schritte. Markiere unklare Informationen als Rueckfrage. Schreibe sachlich, knapp und umsetzungsorientiert.',
+        'Wandle die folgenden Meeting-Notizen in ein strukturiertes Protokoll um: [Notizen]. Gliedere das Ergebnis in: Kurzfazit, besprochene Punkte, Entscheidungen, offene Fragen, Risiken, Aufgaben mit Verantwortlichen und Fälligkeiten sowie nächste Schritte. Markiere unklare Informationen als Rückfrage. Schreibe sachlich, knapp und umsetzungsorientiert.',
       categoryId: ids.productivityCategoryId,
       tabId: ids.tabId,
       tags: ['meeting', 'protokoll', 'todo', 'organisation']
@@ -216,10 +313,10 @@ function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
       ...base,
       id: 'sample-project-risk-analysis',
       title: 'Projekt-Risikoanalyse',
-      description: 'Identifiziert Projektrisiken mit Eintrittswahrscheinlichkeit, Auswirkung und Massnahmen.',
-      content: 'Analysiere die Risiken fuer folgendes Projekt: [Projektbeschreibung].',
+      description: 'Identifiziert Projektrisiken mit Eintrittswahrscheinlichkeit, Auswirkung und Maßnahmen.',
+      content: 'Analysiere die Risiken für folgendes Projekt: [Projektbeschreibung].',
       optimizedContent:
-        'Analysiere die Risiken fuer folgendes Projekt: [Projektbeschreibung]. Erstelle eine Tabelle mit Risiko, Ursache, Eintrittswahrscheinlichkeit, Auswirkung, Fruehwarnindikator, Gegenmassnahme, Verantwortlichem und Rest-Risiko. Priorisiere die Top-5-Risiken und formuliere konkrete Handlungsempfehlungen fuer die naechsten zwei Wochen.',
+        'Analysiere die Risiken für folgendes Projekt: [Projektbeschreibung]. Erstelle eine Tabelle mit Risiko, Ursache, Eintrittswahrscheinlichkeit, Auswirkung, Frühwarnindikator, Gegenmaßnahme, Verantwortlichem und Rest-Risiko. Priorisiere die Top-5-Risiken und formuliere konkrete Handlungsempfehlungen für die nächsten zwei Wochen.',
       categoryId: ids.analysisCategoryId,
       tabId: ids.tabId,
       tags: ['risikoanalyse', 'projektmanagement', 'bewertung']
@@ -231,7 +328,7 @@ function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
       description: 'Erstellt ein Management-Briefing mit Lagebild, Optionen und Empfehlung.',
       content: 'Erstelle ein Strategie-Briefing zu folgendem Thema: [Thema].',
       optimizedContent:
-        'Erstelle ein praezises Strategie-Briefing zu [Thema] fuer ein Management-Publikum. Struktur: Ausgangslage, Zielbild, relevante Annahmen, Chancen, Risiken, drei Handlungsoptionen mit Vor- und Nachteilen, empfohlene Option, Entscheidungsbedarf und naechste Schritte. Schreibe knapp, faktenorientiert und entscheidungsreif.',
+        'Erstelle ein präzises Strategie-Briefing zu [Thema] für ein Management-Publikum. Struktur: Ausgangslage, Zielbild, relevante Annahmen, Chancen, Risiken, drei Handlungsoptionen mit Vor- und Nachteilen, empfohlene Option, Entscheidungsbedarf und nächste Schritte. Schreibe knapp, faktenorientiert und entscheidungsreif.',
       categoryId: ids.strategyCategoryId,
       tabId: ids.tabId,
       tags: ['strategie', 'management', 'briefing', 'entscheidung']
@@ -241,9 +338,9 @@ function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
       id: 'sample-feature-specification',
       title: 'Feature-Spezifikation',
       description: 'Beschreibt ein Software-Feature mit Nutzerziel, Akzeptanzkriterien und Randfaellen.',
-      content: 'Erstelle eine Feature-Spezifikation fuer: [Feature-Idee].',
+      content: 'Erstelle eine Feature-Spezifikation für: [Feature-Idee].',
       optimizedContent:
-        'Erstelle eine produktionsnahe Feature-Spezifikation fuer [Feature-Idee]. Beschreibe Zielgruppe, Problem, Nutzerziel, User Stories, funktionale Anforderungen, Nicht-Ziele, Akzeptanzkriterien, Randfaelle, Fehlermeldungen, Datenschutzaspekte und offene Fragen. Formatiere klar in Markdown und priorisiere Muss-/Soll-/Kann-Anforderungen.',
+        'Erstelle eine produktionsnahe Feature-Spezifikation für [Feature-Idee]. Beschreibe Zielgruppe, Problem, Nutzerziel, User Stories, funktionale Anforderungen, Nicht-Ziele, Akzeptanzkriterien, Randfaelle, Fehlermeldungen, Datenschutzaspekte und offene Fragen. Formatiere klar in Markdown und priorisiere Muss-/Soll-/Kann-Anforderungen.',
       categoryId: ids.codingCategoryId,
       tabId: ids.tabId,
       tags: ['produkt', 'spezifikation', 'requirements', 'software']
@@ -253,9 +350,9 @@ function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
       id: 'sample-code-review',
       title: 'Code-Review-Assistent',
       description: 'Prueft Code auf Fehler, Wartbarkeit, Sicherheit und fehlende Tests.',
-      content: 'Fuehre ein Code Review fuer folgenden Code durch: [Code].',
+      content: 'Fuehre ein Code Review für folgenden Code durch: [Code].',
       optimizedContent:
-        'Fuehre ein strenges Code Review fuer den folgenden Code durch: [Code]. Priorisiere konkrete Bugs, Sicherheitsrisiken, Regressionen, Performance-Probleme, Wartbarkeit und fehlende Tests. Gib Findings nach Schweregrad sortiert aus. Nenne Datei/Zeile, erklaere die Auswirkung und schlage eine konkrete Korrektur vor. Verzichte auf Stilfragen ohne echten Nutzen.',
+        'Fuehre ein strenges Code Review für den folgenden Code durch: [Code]. Priorisiere konkrete Bugs, Sicherheitsrisiken, Regressionen, Performance-Probleme, Wartbarkeit und fehlende Tests. Gib Findings nach Schweregrad sortiert aus. Nenne Datei/Zeile, erklaere die Auswirkung und schlage eine konkrete Korrektur vor. Verzichte auf Stilfragen ohne echten Nutzen.',
       categoryId: ids.codingCategoryId,
       tabId: ids.tabId,
       tags: ['code-review', 'qualität', 'tests', 'security']
@@ -264,7 +361,7 @@ function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
       ...base,
       id: 'sample-debugging',
       title: 'Debugging-Analyse',
-      description: 'Hilft bei der systematischen Ursachenanalyse fuer Fehler und unerwartetes Verhalten.',
+      description: 'Hilft bei der systematischen Ursachenanalyse für Fehler und unerwartetes Verhalten.',
       content: 'Hilf mir beim Debugging dieses Problems: [Fehlerbeschreibung].',
       optimizedContent:
         'Analysiere folgendes Softwareproblem systematisch: [Fehlerbeschreibung]. Frage zuerst nach fehlenden Informationen, falls Ursache, Umgebung oder Reproduktionsschritte unklar sind. Erstelle dann Hypothesen nach Wahrscheinlichkeit, konkrete Pruefschritte, moegliche Fixes und Tests zur Verifikation. Trenne Beobachtung, Annahme und Empfehlung klar voneinander.',
@@ -275,11 +372,11 @@ function createSamplePrompts(ids: SamplePromptIds): Prompt[] {
     {
       ...base,
       id: 'sample-image-prompt',
-      title: 'Bildprompt fuer KI-Generatoren',
-      description: 'Erzeugt praezise Bildprompts mit Motiv, Stil, Licht, Kamera und Negativvorgaben.',
-      content: 'Erstelle einen Bildprompt fuer folgendes Motiv: [Motiv].',
+      title: 'Bildprompt für KI-Generatoren',
+      description: 'Erzeugt präzise Bildprompts mit Motiv, Stil, Licht, Kamera und Negativvorgaben.',
+      content: 'Erstelle einen Bildprompt für folgendes Motiv: [Motiv].',
       optimizedContent:
-        'Erstelle einen hochwertigen Bildprompt fuer [Motiv]. Beschreibe Hauptmotiv, Umgebung, Komposition, Perspektive, Lichtstimmung, Farbwelt, Materialitaet, Detailgrad und Stilreferenz. Fuege technische Angaben wie Seitenverhaeltnis, Kamerablick, Schaerfentiefe und Qualitaetsniveau hinzu. Ergaenze eine kurze Negativliste fuer unerwuenschte Elemente wie Textartefakte, Verzerrungen oder unruhige Hintergruende.',
+        'Erstelle einen hochwertigen Bildprompt für [Motiv]. Beschreibe Hauptmotiv, Umgebung, Komposition, Perspektive, Lichtstimmung, Farbwelt, Materialitaet, Detailgrad und Stilreferenz. Fuege technische Angaben wie Seitenverhältnis, Kamerablick, Schaerfentiefe und Qualitaetsniveau hinzu. Ergänze eine kurze Negativliste für unerwuenschte Elemente wie Textartefakte, Verzerrungen oder unruhige Hintergruende.',
       categoryId: ids.imageCategoryId,
       tabId: ids.tabId,
       tags: ['bildprompt', 'midjourney', 'design', 'ki-bild']

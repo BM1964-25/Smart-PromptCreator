@@ -24,11 +24,11 @@ export async function parseProxyError(response: Response) {
   const message = payload?.message || anthropicMessage || payload?.error || response.statusText;
 
   if (response.status === 401 || anthropicErrorType === 'authentication_error') {
-    return 'Anthropic API-Schluessel ungueltig oder abgelaufen. Bitte pruefe den Key in den Einstellungen und speichere ihn erneut.';
+    return 'Anthropic API-Schlüssel ungültig oder abgelaufen. Bitte prüfe den Key in den Einstellungen und speichere ihn erneut.';
   }
 
   if (response.status === 403 || anthropicErrorType === 'permission_error') {
-    return 'Anthropic hat die Anfrage abgelehnt. Bitte pruefe, ob dein API-Key fuer die Messages API freigeschaltet ist.';
+    return 'Anthropic hat die Anfrage abgelehnt. Bitte prüfe, ob dein API-Key für die Messages API freigeschaltet ist.';
   }
 
   if (response.status === 429 || anthropicErrorType === 'rate_limit_error') {
@@ -36,7 +36,7 @@ export async function parseProxyError(response: Response) {
   }
 
   if (response.status === 405) {
-    return 'Die lokale API wurde mit der falschen HTTP-Methode aufgerufen. Bitte die App ueber den lokalen Starter oder npm start starten und die Aktion erneut ausfuehren.';
+    return 'Die lokale API wurde mit der falschen HTTP-Methode aufgerufen. Bitte die App über den lokalen Starter oder npm start starten und die Aktion erneut ausführen.';
   }
 
   if (response.status === 0 || response.status >= 500) {

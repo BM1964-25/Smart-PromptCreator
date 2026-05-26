@@ -1,4 +1,4 @@
-import { FolderOpen, Plus, Trash2 } from 'lucide-react';
+import { FolderOpen, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { DndContext, type DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -30,7 +30,7 @@ export function CategoryNav({ categories, activeCategoryId, onSelect, onCreate, 
     <div className="mt-6">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">Kategorien</span>
-        <button className="icon-only" title="Kategorie hinzufuegen" onClick={onCreate}>
+        <button className="icon-only" title="Kategorie hinzufügen" onClick={onCreate}>
           <Plus size={15} />
         </button>
       </div>
@@ -71,13 +71,21 @@ function SortableCategory({
 
   return (
     <div ref={setNodeRef} style={style} className="group flex items-center gap-1">
-      <button {...attributes} {...listeners} className={`nav-row min-w-0 flex-1 ${active ? 'active' : ''}`} onClick={onSelect}>
+      <button
+        {...attributes}
+        {...listeners}
+        className="grid h-8 w-6 shrink-0 cursor-grab place-items-center rounded text-neutral-300 transition hover:bg-[#ece8dc] hover:text-neutral-600 active:cursor-grabbing dark:hover:bg-[#2b2b29] dark:hover:text-neutral-200"
+        title="Kategorie verschieben"
+      >
+        <GripVertical size={14} />
+      </button>
+      <button className={`nav-row min-w-0 flex-1 ${active ? 'active' : ''}`} onClick={onSelect}>
         <span className="mr-2 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: category.color }} />
         <span className="truncate">{category.name}</span>
       </button>
       <button
         className="grid h-8 w-8 shrink-0 place-items-center rounded text-neutral-400 opacity-0 transition hover:bg-[#f3ece8] hover:text-[#a33a2d] group-hover:opacity-100 focus:opacity-100 dark:hover:bg-[#2b1714]"
-        title="Kategorie loeschen"
+        title="Kategorie löschen"
         onClick={(event) => {
           event.stopPropagation();
           onDelete();

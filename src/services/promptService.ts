@@ -12,6 +12,7 @@ export async function createPrompt(input: Partial<Prompt>) {
     description: input.description || '',
     content: input.content || '',
     optimizedContent: input.optimizedContent || '',
+    variants: input.variants || [],
     categoryId: input.categoryId || fallbackCategory?.id || '',
     tabId: input.tabId || fallbackTab?.id || '',
     tags: input.tags || [],
@@ -28,9 +29,7 @@ export async function createPrompt(input: Partial<Prompt>) {
 export async function updatePrompt(id: string, changes: Partial<Prompt>) {
   const existing = await db.prompts.get(id);
   if (!existing) return;
-  const revisionChanged =
-    changes.content !== undefined && changes.content !== existing.content ||
-    changes.optimizedContent !== undefined && changes.optimizedContent !== existing.optimizedContent;
+  const revisionChanged = hasPromptChanged(existing, changes);
 
   await db.prompts.update(id, {
     ...changes,
@@ -40,13 +39,52 @@ export async function updatePrompt(id: string, changes: Partial<Prompt>) {
           ...existing.history,
           {
             id: crypto.randomUUID(),
+            title: existing.title,
+            description: existing.description,
             content: existing.content,
             optimizedContent: existing.optimizedContent,
+            variants: existing.variants || [],
+            categoryId: existing.categoryId,
+            tabId: existing.tabId,
+            tags: existing.tags,
+            favorite: existing.favorite,
+            version: existing.version,
             createdAt: now()
           }
         ].slice(-25)
       : existing.history,
     updatedAt: now()
+  });
+}
+
+export async function undoLastPromptChange(id: string) {
+  const existing = await db.prompts.get(id);
+  const previous = existing?.history.at(-1);
+  if (!existing || !previous) return false;
+
+  await db.prompts.update(id, {
+    title: previous.title ?? existing.title,
+    description: previous.description ?? existing.description,
+    content: previous.content,
+    optimizedContent: previous.optimizedContent,
+    variants: previous.variants ?? existing.variants ?? [],
+    categoryId: previous.categoryId ?? existing.categoryId,
+    tabId: previous.tabId ?? existing.tabId,
+    tags: previous.tags ?? existing.tags,
+    favorite: previous.favorite ?? existing.favorite,
+    version: previous.version ?? Math.max(1, existing.version - 1),
+    history: existing.history.slice(0, -1),
+    updatedAt: now()
+  });
+
+  return true;
+}
+
+function hasPromptChanged(existing: Prompt, changes: Partial<Prompt>) {
+  const trackedKeys: Array<keyof Prompt> = ['title', 'description', 'content', 'optimizedContent', 'variants', 'categoryId', 'tabId', 'tags', 'favorite'];
+  return trackedKeys.some((key) => {
+    if (changes[key] === undefined) return false;
+    return JSON.stringify(changes[key]) !== JSON.stringify(existing[key]);
   });
 }
 
@@ -111,7 +149,7 @@ export async function exportLibrary(promptIds?: string[]) {
 
 export async function importLibrary(payload: ImportPayload, conflictMode: 'duplicate' | 'overwrite' = 'duplicate') {
   if (!payload.version || !Array.isArray(payload.prompts)) {
-    throw new Error('Die Importdatei ist keine gueltige Prompt-Bibliothek.');
+    throw new Error('Die Importdatei ist keine gültige Prompt-Bibliothek.');
   }
 
   await db.transaction('rw', db.tabs, db.categories, db.prompts, async () => {
@@ -133,6 +171,7 @@ export async function importLibrary(payload: ImportPayload, conflictMode: 'dupli
         description: input.description || '',
         content: input.content || '',
         optimizedContent: input.optimizedContent || input.optimized || '',
+        variants: input.variants || [],
         categoryId: input.categoryId || '',
         tabId: input.tabId || '',
         tags: input.tags || [],

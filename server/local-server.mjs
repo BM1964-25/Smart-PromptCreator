@@ -58,7 +58,7 @@ async function proxyAnthropic(request, response) {
   if (request.method !== 'POST') {
     sendJson(response, 405, {
       error: 'method_not_allowed',
-      message: 'Diese Route akzeptiert nur POST. Starte die App ueber den lokalen Server und wiederhole die Aktion.'
+      message: 'Diese Route akzeptiert nur POST. Starte die App über den lokalen Server und wiederhole die Aktion.'
     });
     return;
   }
@@ -66,7 +66,7 @@ async function proxyAnthropic(request, response) {
   try {
     const { apiKey, payload } = await readJsonBody(request);
     if (!apiKey || typeof apiKey !== 'string') {
-      sendJson(response, 400, { error: 'missing_api_key', message: 'Anthropic API-Schluessel fehlt.' });
+      sendJson(response, 400, { error: 'missing_api_key', message: 'Anthropic API-Schlüssel fehlt.' });
       return;
     }
     if (!payload || typeof payload !== 'object') {
@@ -107,7 +107,7 @@ async function serveStatic(request, response) {
   if (!existsSync(DIST_DIR)) {
     sendJson(response, 503, {
       error: 'dist_missing',
-      message: 'Der Build-Ordner dist fehlt. Bitte zuerst npm run build ausfuehren.'
+      message: 'Der Build-Ordner dist fehlt. Bitte zuerst npm run build ausführen.'
     });
     return;
   }
@@ -118,7 +118,7 @@ async function serveStatic(request, response) {
   let filePath = resolve(DIST_DIR, safePath);
 
   if (!filePath.startsWith(DIST_DIR)) {
-    sendJson(response, 403, { error: 'forbidden', message: 'Ungueltiger Dateipfad.' });
+    sendJson(response, 403, { error: 'forbidden', message: 'Ungültiger Dateipfad.' });
     return;
   }
 

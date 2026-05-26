@@ -31,15 +31,15 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
             <HelpSection icon={<Database size={18} />} title="Lokale Speicherung">
               <p>
                 Prompts, Tabs, Kategorien, Tags und Einstellungen werden lokal in IndexedDB gespeichert. Es gibt keine Cloud-Datenbank
-                fuer Prompt-Inhalte. Export und Import laufen ueber JSON-Dateien.
+                für Prompt-Inhalte. Export und Import laufen über JSON-Dateien.
               </p>
             </HelpSection>
 
             <HelpSection icon={<Sparkles size={18} />} title="Prompt optimieren">
               <ul>
                 <li>Prompt zuerst im Originalfeld erfassen.</li>
-                <li>Optimierungsziel, Zielgruppe, Stil, Format, Staerke und Sprache einstellen.</li>
-                <li>Die optimierte Version pruefen und bei Bedarf manuell nachbearbeiten.</li>
+                <li>Optimierungsziel, Zielgruppe, Stil, Format, Stärke und Sprache einstellen.</li>
+                <li>Die optimierte Version prüfen und bei Bedarf manuell nachbearbeiten.</li>
                 <li>Danach Titel, Beschreibung, Kategorie und Tags per KI vorschlagen lassen.</li>
               </ul>
             </HelpSection>
@@ -48,25 +48,25 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
               <ul>
                 <li>Tabs sind Hauptbereiche, zum Beispiel Bibliothek, Produktion oder Kundenprojekte.</li>
                 <li>Kategorien liegen innerhalb eines Tabs und gruppieren Prompts fachlich.</li>
-                <li>Tags sind flexible Suchbegriffe, die mehrere Themen verbinden koennen.</li>
+                <li>Tags sind flexible Suchbegriffe, die mehrere Themen verbinden können.</li>
                 <li>Viele Tabs oder Kategorien werden im mittleren Sidebar-Bereich scrollbar dargestellt.</li>
               </ul>
             </HelpSection>
 
             <HelpSection icon={<KeyRound size={18} />} title="Anthropic API-Key">
               <p>
-                Fuer KI-Funktionen wird ein Anthropic API-Key benoetigt. Der Key wird lokal gespeichert. API-Anfragen senden den
+                Für KI-Funktionen wird ein Anthropic API-Key benötigt. Der Key wird lokal gespeichert. API-Anfragen senden den
                 jeweiligen Prompt an Anthropic, wenn eine Optimierung oder ein Metadatenvorschlag gestartet wird.
               </p>
             </HelpSection>
 
             <HelpSection icon={<ShieldCheck size={18} />} title="Wichtig zu beachten">
               <ul>
-                <li>Keine vertraulichen Daten an die KI senden, wenn sie nicht extern verarbeitet werden duerfen.</li>
-                <li>KI-Vorschlaege immer fachlich pruefen, bevor sie produktiv genutzt werden.</li>
-                <li>Regelmaessig JSON-Backups exportieren, besonders vor groesseren Aufraeumarbeiten.</li>
-                <li>Beim Loeschen von Tabs oder Kategorien bleiben Prompts erhalten, verlieren aber die Zuordnung.</li>
-                <li>API-Keys und Lizenzdaten sorgfaeltig behandeln und nicht in exportierten Prompt-Texten ablegen.</li>
+                <li>Keine vertraulichen Daten an die KI senden, wenn sie nicht extern verarbeitet werden dürfen.</li>
+                <li>KI-Vorschläge immer fachlich prüfen, bevor sie produktiv genutzt werden.</li>
+                <li>Regelmäßig JSON-Backups exportieren, besonders vor größeren Aufräumarbeiten.</li>
+                <li>Beim Löschen von Tabs oder Kategorien bleiben Prompts erhalten, verlieren aber die Zuordnung.</li>
+                <li>API-Keys und Lizenzdaten sorgfältig behandeln und nicht in exportierten Prompt-Texten ablegen.</li>
               </ul>
             </HelpSection>
           </div>
@@ -78,10 +78,10 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
             </div>
             <ol className="list-decimal space-y-1 pl-5 text-neutral-600 dark:text-neutral-300">
               <li>Neuen Prompt erstellen und Rohtext eingeben.</li>
-              <li>Optimierungseinstellungen passend zum Ziel waehlen.</li>
-              <li>Prompt optimieren lassen und Ergebnis pruefen.</li>
+              <li>Optimierungseinstellungen passend zum Ziel wählen.</li>
+              <li>Prompt optimieren lassen und Ergebnis prüfen.</li>
               <li>Titel, Beschreibung, Kategorie und Tags per KI vorschlagen lassen.</li>
-              <li>Eintrag speichern, bei Bedarf favorisieren und spaeter ueber Suche oder Tags wiederfinden.</li>
+              <li>Eintrag speichern, bei Bedarf favorisieren und später über Suche oder Tags wiederfinden.</li>
             </ol>
           </section>
         </div>

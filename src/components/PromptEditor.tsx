@@ -1,10 +1,10 @@
-import { CheckCircle2, Copy, Save, Settings2, Sparkles, Star, Tags, Trash2 } from 'lucide-react';
+import { CheckCircle2, Copy, Save, Settings2, Sparkles, Star, Tags, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { optimizeWithAnthropic, suggestPromptMetadataWithAnthropic } from '../services/anthropicService';
-import { defaultOptimizerPreferences, optimizeLocally } from '../services/optimizerService';
-import { duplicatePrompt, findOrCreateCategory, updatePrompt } from '../services/promptService';
-import type { AiProvider, Category, OptimizerPreferences, Prompt, Settings } from '../types/domain';
+import { buildVariantOptimizationPrompt, defaultOptimizerPreferences, optimizeLocally, optimizeVariantLocally } from '../services/optimizerService';
+import { duplicatePrompt, findOrCreateCategory, undoLastPromptChange, updatePrompt } from '../services/promptService';
+import type { AiProvider, Category, OptimizerPreferences, Prompt, PromptVariant, PromptVariantTone, Settings } from '../types/domain';
 import { decryptSecret } from '../utils/crypto';
 
 interface PromptEditorProps {
@@ -19,10 +19,12 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
   const [showExpertOptions, setShowExpertOptions] = useState(false);
   const [optimizerPreferences, setOptimizerPreferences] = useState<OptimizerPreferences>(defaultOptimizerPreferences);
   const [busy, setBusy] = useState(false);
+  const [variantBusy, setVariantBusy] = useState<PromptVariantTone | 'all'>();
   const [metadataBusy, setMetadataBusy] = useState(false);
   const promptDescription = prompt?.description || '';
   const contentStats = getTextStats(prompt?.content || '');
   const optimizedStats = getTextStats(prompt?.optimizedContent || '');
+  const variants = getPromptVariants(prompt);
 
   if (!prompt) {
     return <div className="grid place-items-center text-sm text-neutral-500">Erstelle oder importiere einen Eintrag in der Prompt-Bibliothek.</div>;
@@ -47,6 +49,80 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
     } finally {
       setBusy(false);
     }
+  }
+
+  async function optimizeContent(content: string, preferences: OptimizerPreferences, tone: PromptVariantTone) {
+    if (provider === 'anthropic') {
+      const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
+      if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
+      return optimizeWithAnthropic(apiKey, buildVariantOptimizationPrompt(content, preferences, tone), preferences);
+    }
+
+    return optimizeVariantLocally(content, preferences, tone);
+  }
+
+  async function generateVariants() {
+    if (!prompt) return;
+    if (!prompt.content.trim()) {
+      toast.error('Bitte zuerst einen Prompt eingeben.');
+      return;
+    }
+
+    setVariantBusy('all');
+    try {
+      const nextVariants: PromptVariant[] = [];
+      for (const preset of variantPresets) {
+        const content = await optimizeContent(prompt.content, createVariantPreferences(optimizerPreferences, preset.tone), preset.tone);
+        nextVariants.push({
+          id: preset.tone,
+          tone: preset.tone,
+          title: preset.title,
+          goal: preset.goal,
+          description: preset.description,
+          content,
+          updatedAt: new Date().toISOString()
+        });
+      }
+      await updatePrompt(prompt.id!, {
+        variants: nextVariants,
+        optimizedContent: nextVariants.find((variant) => variant.tone === 'premium')?.content || nextVariants[0]?.content || prompt.optimizedContent
+      });
+      toast.success('2 Varianten erstellt');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Varianten konnten nicht erstellt werden');
+    } finally {
+      setVariantBusy(undefined);
+    }
+  }
+
+  async function improveVariant(variant: PromptVariant) {
+    if (!prompt) return;
+    setVariantBusy(variant.tone);
+    try {
+      const improved = await optimizeContent(variant.content || prompt.content, createVariantPreferences(optimizerPreferences, variant.tone), variant.tone);
+      const nextVariants = variants.map((item) =>
+        item.tone === variant.tone
+          ? {
+              ...item,
+              content: improved,
+              updatedAt: new Date().toISOString()
+            }
+          : item
+      );
+      await updatePrompt(prompt.id!, { variants: nextVariants });
+      toast.success(`${variant.title} verbessert`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Variante konnte nicht verbessert werden');
+    } finally {
+      setVariantBusy(undefined);
+    }
+  }
+
+  async function useVariant(variant: PromptVariant) {
+    if (!prompt) return;
+    if (!variant.content.trim()) return;
+    await updatePrompt(prompt.id!, { optimizedContent: variant.content });
+    toast.success(`${variant.title} übernommen`);
   }
 
   function updateOptimizerPreference<Key extends keyof OptimizerPreferences>(key: Key, value: OptimizerPreferences[Key]) {
@@ -92,28 +168,42 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
     await updatePrompt(prompt.id!, { tags: prompt.tags.filter((tag) => tag !== tagToRemove) });
   }
 
+  async function undoLastChange() {
+    if (!prompt?.id) return;
+    const restored = await undoLastPromptChange(prompt.id);
+    if (restored) {
+      toast.success('Letzter Schritt rückgängig gemacht');
+    } else {
+      toast.info('Kein vorheriger Schritt vorhanden');
+    }
+  }
+
   return (
     <div className="grid min-w-0 grid-rows-[auto_minmax(0,1fr)] bg-[#fdfcf8] dark:bg-[#151515]">
-      <header className="flex items-center justify-between border-b border-line px-5 py-3 dark:border-[#333]">
+      <header className="flex min-h-[68px] items-center justify-between border-b border-line px-5 py-3 dark:border-[#333]">
         <div className="min-w-0">
-          <input
-            value={prompt.title}
-            onChange={(event) => updatePrompt(prompt.id!, { title: event.target.value })}
-            className="w-full bg-transparent text-lg font-semibold outline-none"
-          />
-          <p className="text-xs text-neutral-500">Version {prompt.version} · lokal gespeichert</p>
+          <h2 className="text-xl font-semibold tracking-normal">Prompt-Werkstatt</h2>
+          <p className="text-xs text-neutral-500">Prompt bearbeiten · Varianten vergleichen · Ausgabe übernehmen</p>
         </div>
-        <div className="flex gap-2">
-          <button className="icon-only" title="Favorit" onClick={() => updatePrompt(prompt.id!, { favorite: !prompt.favorite })}>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button className="toolbar-action" aria-label="Rückgängig" onClick={undoLastChange} disabled={!prompt.history.length}>
+            <span>Rückgängig</span>
+            <Undo2 size={17} />
+          </button>
+          <button className="toolbar-action" aria-label="Favorit" onClick={() => updatePrompt(prompt.id!, { favorite: !prompt.favorite })}>
+            <span>Favorit</span>
             <Star size={17} className={prompt.favorite ? 'fill-amber text-amber' : ''} />
           </button>
-          <button className="icon-only" title="Duplizieren" onClick={() => duplicatePrompt(prompt)}>
+          <button className="toolbar-action" aria-label="Duplizieren" onClick={() => duplicatePrompt(prompt)}>
+            <span>Duplizieren</span>
             <Copy size={17} />
           </button>
-          <button className="icon-only" title="Speichern">
+          <button className="toolbar-action" aria-label="Speichern">
+            <span>Speichern</span>
             <Save size={17} />
           </button>
-          <button className="icon-only" title="Loeschen" onClick={() => onDelete(prompt)}>
+          <button className="toolbar-action" aria-label="Löschen" onClick={() => onDelete(prompt)}>
+            <span>Löschen</span>
             <Trash2 size={17} />
           </button>
         </div>
@@ -122,11 +212,41 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
       <div className="grid min-h-0 grid-cols-2 overflow-hidden">
         <section className="min-h-0 min-w-0 overflow-y-auto border-r border-line dark:border-[#333]">
           <div className="grid gap-3 border-b border-line p-3 dark:border-[#333]">
-            <div className="rounded border border-line bg-white p-3 dark:border-[#333] dark:bg-[#181817]">
-              <div className="grid grid-cols-3 divide-x divide-line rounded border border-line bg-[#f7f7f4] text-xs dark:divide-[#333] dark:border-[#333] dark:bg-[#151515]">
-                <WorkflowStep number="1" title="Prompt" subtitle="Inhalt erfasst" active={Boolean(prompt.content.trim())} />
-                <WorkflowStep number="2" title="Metadaten" subtitle="KI ergänzt" active={Boolean(promptDescription.trim() || prompt.tags.length)} />
-                <WorkflowStep number="3" title="Speichern" subtitle="Eintrag sichern" active={Boolean(prompt.title.trim() && prompt.categoryId)} />
+            <div className="rounded border border-line bg-white px-3 py-2 dark:border-[#333] dark:bg-[#181817]">
+              <input
+                value={prompt.title}
+                onChange={(event) => updatePrompt(prompt.id!, { title: event.target.value })}
+                className="w-full bg-transparent text-base font-semibold outline-none"
+              />
+              <p className="text-xs text-neutral-500">Version {prompt.version} · lokal gespeichert</p>
+            </div>
+            <div className="rounded border border-line bg-white px-3 py-4 dark:border-[#333] dark:bg-[#181817]">
+              <div className="relative grid grid-cols-4 gap-3">
+                <div className="absolute left-[12.5%] right-[12.5%] top-4 h-px bg-line dark:bg-[#333]" />
+                <WorkflowStep
+                  number="01"
+                  title="Prompt-Ziel klären"
+                  subtitle={['Was soll entstehen?', 'Für wen ist es gedacht?', 'Welche Infos fehlen?']}
+                  active={Boolean(prompt.content.trim())}
+                />
+                <WorkflowStep
+                  number="02"
+                  title="Masterstruktur aufbauen"
+                  subtitle={['Rolle und Ziel definieren.', 'Kontext einordnen.', 'Aufgaben klar gliedern.']}
+                  active={Boolean(prompt.content.trim() && prompt.categoryId)}
+                />
+                <WorkflowStep
+                  number="03"
+                  title="Varianten vergleichen"
+                  subtitle={['Kompakt schnell nutzen.', 'Premium sauber ausarbeiten.', 'Beste Richtung wählen.']}
+                  active={variants.some((variant) => variant.content.trim())}
+                />
+                <WorkflowStep
+                  number="04"
+                  title="Prompt finalisieren"
+                  subtitle={['Ausgabe übernehmen.', 'Details nachschärfen.', 'Speichern und wiederfinden.']}
+                  active={Boolean(prompt.optimizedContent.trim())}
+                />
               </div>
             </div>
 
@@ -203,7 +323,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
             <div className="grid gap-3 rounded border border-line bg-white p-3 dark:border-[#333] dark:bg-[#181817]">
               <div>
                 <h2 className="text-sm font-semibold">Metadaten</h2>
-                <p className="text-xs text-neutral-500">Titel, Beschreibung, Kategorie und Tags fuer die Bibliothek.</p>
+                <p className="text-xs text-neutral-500">Titel, Beschreibung, Kategorie und Tags für die Bibliothek.</p>
               </div>
               <label className="grid gap-1 text-xs font-medium text-neutral-500">
                 Titel
@@ -220,7 +340,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
                   className="field min-h-20 resize-y leading-6"
                   value={promptDescription}
                   onChange={(event) => updatePrompt(prompt.id!, { description: event.target.value })}
-                  placeholder="Kurze Beschreibung fuer die Prompt-Bibliothek"
+                  placeholder="Kurze Beschreibung für die Prompt-Bibliothek"
                 />
               </label>
               <div className="rounded border border-line bg-[#f9f8f3] p-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300">
@@ -321,11 +441,64 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
                 </label>
                 <div className="rounded border border-line bg-[#f9f8f3] p-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300">
                   {provider === 'anthropic'
-                    ? 'Anthropic nutzt deinen gespeicherten API-Schluessel, sendet den Prompt an Claude und erzeugt eine KI-optimierte Version. Dafuer ist eine aktive Verbindung erforderlich.'
-                    : 'Lokal verarbeitet den Prompt nur im Browser mit einer eingebauten Vorlage. Es werden keine Inhalte an Anthropic gesendet, die Optimierung ist dafuer regelbasiert und weniger kreativ.'}
+                    ? 'Anthropic nutzt deinen gespeicherten API-Schlüssel, sendet den Prompt an Claude und erzeugt eine KI-optimierte Version. Dafür ist eine aktive Verbindung erforderlich.'
+                    : 'Lokal verarbeitet den Prompt nur im Browser mit einer eingebauten Vorlage. Es werden keine Inhalte an Anthropic gesendet, die Optimierung ist dafür regelbasiert und weniger kreativ.'}
                 </div>
               </div>
             )}
+            <div className="grid gap-3 rounded border border-line bg-white p-3 dark:border-[#3a3a38] dark:bg-[#181817]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold">Variantenvergleich</h2>
+                  <p className="text-xs text-neutral-500">Kompakte und Premium-Struktur vergleichen, übernehmen und weiter verbessern.</p>
+                </div>
+                <button className="icon-button shrink-0" onClick={generateVariants} disabled={Boolean(variantBusy)}>
+                  <Sparkles size={16} /> {variantBusy === 'all' ? 'Erstellt...' : '2 Varianten'}
+                </button>
+              </div>
+              <div className="grid gap-2 xl:grid-cols-2">
+                {variants.map((variant) => {
+                  const stats = getTextStats(variant.content);
+                  const isBusy = variantBusy === variant.tone;
+                  return (
+                    <article key={variant.tone} className="grid min-h-60 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 rounded border border-line bg-[#f9f8f3] p-3 dark:border-[#333] dark:bg-[#151515]">
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-sm font-semibold">{variant.title}</h3>
+                          <span className="rounded bg-[#ece8dc] px-2 py-1 text-[11px] text-neutral-600 dark:bg-[#2b2b29] dark:text-neutral-300">
+                            {stats.words} Wörter
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs leading-5 text-neutral-500">{variant.description}</p>
+                        <p className="mt-2 rounded border border-line bg-white px-2 py-1.5 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#111] dark:text-neutral-300">
+                          <span className="font-semibold">Ziel:</span> {variant.goal}
+                        </p>
+                      </div>
+                      <textarea
+                        className="min-h-36 resize-y rounded border border-line bg-white p-3 text-xs leading-5 outline-none focus:border-brand dark:border-[#333] dark:bg-[#111]"
+                        value={variant.content}
+                        onChange={(event) =>
+                          updatePrompt(prompt.id!, {
+                            variants: variants.map((item) =>
+                              item.tone === variant.tone ? { ...item, content: event.target.value, updatedAt: new Date().toISOString() } : item
+                            )
+                          })
+                        }
+                        placeholder={`${variant.title} Variante erscheint hier...`}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <button className="icon-button justify-center" onClick={() => useVariant(variant)} disabled={!variant.content.trim()}>
+                          <CheckCircle2 size={16} /> Übernehmen
+                        </button>
+                        <button className="icon-button justify-center" onClick={() => improveVariant(variant)} disabled={Boolean(variantBusy) || !variant.content.trim()}>
+                          <Sparkles size={16} /> {isBusy ? 'Verbessert...' : 'Verbessern'}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
           </div>
           <div className="flex min-h-0 flex-col bg-[#faf8f1] p-4 dark:bg-[#171716]">
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -363,20 +536,74 @@ function getTextStats(value: string) {
   };
 }
 
+const variantPresets: Array<Pick<PromptVariant, 'tone' | 'title' | 'goal' | 'description'>> = [
+  {
+    tone: 'compact',
+    title: 'Kompakt',
+    goal: 'Schnell einen klaren, direkt nutzbaren Prompt erzeugen.',
+    description: 'Kurze Struktur mit Rolle, Ziel, Aufgaben, Ausgabeformat und Qualitätsanforderungen.'
+  },
+  {
+    tone: 'premium',
+    title: 'Premium',
+    goal: 'Den bestmöglichen Prompt nach Masterstruktur für hochwertige Ergebnisse erstellen.',
+    description: 'Vollständige Struktur mit Kontext, Ziel, Aufgaben, Ausgabeformat und Qualitätsanforderungen.'
+  }
+];
+
+function getPromptVariants(prompt?: Prompt): PromptVariant[] {
+  const existing = prompt?.variants || [];
+  return variantPresets.map((preset) => {
+    const variant = existing.find((item) => item.tone === preset.tone);
+    return {
+      id: variant?.id || preset.tone,
+      tone: preset.tone,
+      title: preset.title,
+      goal: variant?.goal || preset.goal,
+      description: preset.description,
+      content: variant?.content || '',
+      updatedAt: variant?.updatedAt || ''
+    };
+  });
+}
+
+function createVariantPreferences(preferences: OptimizerPreferences, tone: PromptVariantTone): OptimizerPreferences {
+  if (tone === 'compact') {
+    return {
+      ...preferences,
+      tone: 'concise',
+      strength: 'fast',
+      format: preferences.format === 'freeform' ? 'steps' : preferences.format,
+      askClarifyingQuestions: false
+    };
+  }
+
+  return {
+    ...preferences,
+    tone: 'detailed',
+    strength: 'premium',
+    askClarifyingQuestions: true
+  };
+}
+
 function shouldReplaceGeneratedTitle(title: string) {
   const normalized = title.trim().toLowerCase();
   return !normalized || normalized === 'neuer prompt' || normalized.endsWith(' kopie');
 }
 
-function WorkflowStep({ number, title, subtitle, active }: { number: string; title: string; subtitle: string; active?: boolean }) {
+function WorkflowStep({ number, title, subtitle, active }: { number: string; title: string; subtitle: string[]; active?: boolean }) {
   return (
-    <div className="flex items-center gap-3 px-3 py-2">
-      <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold ${active ? 'bg-brand text-white' : 'bg-[#ece8dc] text-neutral-600 dark:bg-[#2b2b29] dark:text-neutral-300'}`}>
-        {active ? <CheckCircle2 size={14} /> : number}
+    <div className="relative z-10 grid justify-items-center gap-2 text-center">
+      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-bold ${active ? 'bg-[#111a20] text-white shadow-soft dark:bg-[#f3f0e8] dark:text-[#111]' : 'bg-[#ece8dc] text-neutral-600 dark:bg-[#2b2b29] dark:text-neutral-300'}`}>
+        {number}
       </span>
-      <span className="min-w-0">
-        <span className="block font-semibold text-neutral-800 dark:text-neutral-100">{title}</span>
-        <span className="block text-neutral-500">{subtitle}</span>
+      <span className="grid gap-1">
+        <span className="text-[13px] font-bold leading-4 text-neutral-900 dark:text-neutral-100">{title}</span>
+        <span className="grid min-h-[60px] content-start text-[12px] leading-5 text-neutral-500 dark:text-neutral-400">
+          {subtitle.map((line) => (
+            <span key={line}>{line}</span>
+          ))}
+        </span>
       </span>
     </div>
   );

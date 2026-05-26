@@ -30,6 +30,19 @@ select {
   @apply relative grid h-9 min-w-9 place-items-center rounded border border-line bg-white text-neutral-600 transition hover:border-brand hover:text-brand dark:border-[#3a3a38] dark:bg-[#151515] dark:text-neutral-300;
 }
 
+.toolbar-action {
+  @apply inline-flex h-9 items-center justify-center gap-2 rounded border border-line bg-white px-2.5 text-xs font-medium text-neutral-600 transition hover:border-brand hover:text-brand dark:border-[#3a3a38] dark:bg-[#151515] dark:text-neutral-300;
+}
+
+.toolbar-action:disabled {
+  @apply cursor-not-allowed opacity-45 hover:border-line hover:text-neutral-600 dark:hover:border-[#3a3a38] dark:hover:text-neutral-300;
+}
+
+.vertical-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
 .nav-row {
   @apply relative flex h-9 w-full items-center rounded px-3 text-left text-sm text-neutral-700 transition hover:bg-white dark:text-neutral-300 dark:hover:bg-[#151515];
 }
@@ -51,12 +64,14 @@ select {
 }
 
 button[title],
-label[title] {
+label[title],
+[data-tooltip] {
   @apply relative;
 }
 
 button[title]::after,
 label[title]::after,
+[data-tooltip]::after,
 .icon-button[title]::after,
 .icon-only[title]::after,
 .nav-row[title]::after,
@@ -70,6 +85,7 @@ label[title]::after,
 
 button[title]::before,
 label[title]::before,
+[data-tooltip]::before,
 .icon-button[title]::before,
 .icon-only[title]::before,
 .nav-row[title]::before,
@@ -85,6 +101,8 @@ button[title]:hover::after,
 button[title]:focus-visible::after,
 label[title]:hover::after,
 label[title]:focus-within::after,
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after,
 .icon-button[title]:hover::after,
 .icon-button[title]:focus-visible::after,
 .icon-only[title]:hover::after,
@@ -97,6 +115,8 @@ button[title]:hover::before,
 button[title]:focus-visible::before,
 label[title]:hover::before,
 label[title]:focus-within::before,
+[data-tooltip]:hover::before,
+[data-tooltip]:focus-visible::before,
 .icon-button[title]:hover::before,
 .icon-button[title]:focus-visible::before,
 .icon-only[title]:hover::before,
@@ -113,6 +133,8 @@ button[title]:hover::before,
 button[title]:focus-visible::before,
 label[title]:hover::before,
 label[title]:focus-within::before,
+[data-tooltip]:hover::before,
+[data-tooltip]:focus-visible::before,
 .icon-button[title]:hover::before,
 .icon-button[title]:focus-visible::before,
 .icon-only[title]:hover::before,
@@ -122,6 +144,58 @@ label[title]:focus-within::before,
 .sidebar-nav-row[title]:hover::before,
 .sidebar-nav-row[title]:focus-visible::before {
   transform: translateX(-50%) translateY(0) rotate(45deg);
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+}
+
+.tooltip-bottom::after {
+  top: calc(100% + 8px);
+  bottom: auto;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.tooltip-bottom::before {
+  top: calc(100% + 4px);
+  bottom: auto;
+  transform: translateX(-50%) translateY(-4px) rotate(45deg);
+}
+
+.tooltip-bottom:hover::after,
+.tooltip-bottom:focus-visible::after {
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip-bottom:hover::before,
+.tooltip-bottom:focus-visible::before {
+  transform: translateX(-50%) translateY(0) rotate(45deg);
+}
+
+.tooltip-left::after {
+  top: 50%;
+  right: calc(100% + 8px);
+  bottom: auto;
+  left: auto;
+  transform: translateX(4px) translateY(-50%);
+}
+
+.tooltip-left::before {
+  top: 50%;
+  right: calc(100% + 4px);
+  bottom: auto;
+  left: auto;
+  transform: translateX(4px) translateY(-50%) rotate(45deg);
+}
+
+.tooltip-left:hover::after,
+.tooltip-left:focus-visible::after {
+  transform: translateX(0) translateY(-50%);
+}
+
+.tooltip-left:hover::before,
+.tooltip-left:focus-visible::before {
+  transform: translateX(0) translateY(-50%) rotate(45deg);
 }
 
 aside button[title]::after,
