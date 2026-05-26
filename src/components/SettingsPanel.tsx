@@ -23,13 +23,13 @@ export function SettingsPanel({ settings, onClose }: SettingsPanelProps) {
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-6">
-      <div className="w-full max-w-3xl rounded bg-[#fdfcf8] shadow-soft dark:bg-[#20201f]">
+      <div className="w-full max-w-4xl rounded bg-[#fdfcf8] shadow-soft dark:bg-[#20201f]">
         <header className="flex items-center justify-between border-b border-line p-4 dark:border-[#333]">
           <h2 className="text-base font-semibold">Einstellungen</h2>
           <button className="icon-only" onClick={onClose} title="Schliessen"><X size={17} /></button>
         </header>
         <div className="grid gap-5 p-5">
-          <section>
+          <section className="rounded border border-line bg-[#f4f1e8] p-4 shadow-sm dark:border-[#333] dark:bg-[#181817]">
             <h3 className="mb-2 text-sm font-semibold">Darstellung</h3>
             <select
               className="field max-w-56"
@@ -44,12 +44,12 @@ export function SettingsPanel({ settings, onClose }: SettingsPanelProps) {
 
           <AnthropicApiKeyManager settings={settings} />
 
-          <section>
+          <section className="rounded border border-line bg-[#f4f1e8] p-4 shadow-sm dark:border-[#333] dark:bg-[#181817]">
             <h3 className="mb-2 text-sm font-semibold">Lizenz</h3>
             <div className="grid grid-cols-[1fr_180px_auto] gap-2">
               <input className="field" value={licenseKey} onChange={(event) => setLicenseKey(event.target.value)} placeholder="Lizenzschlüssel" />
               <input className="field" value={licenseEndpoint} onChange={(event) => setLicenseEndpoint(event.target.value)} />
-              <button className="icon-button" onClick={activateLicense}>Aktivieren</button>
+              <button className="icon-button justify-center whitespace-nowrap" onClick={activateLicense}>Aktivieren</button>
             </div>
             <p className="mt-2 text-xs text-neutral-500">Status: {settings?.license.status || 'inactive'}</p>
           </section>

@@ -195,13 +195,13 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
   };
 
   return (
-    <section>
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <section className="rounded border border-line bg-[#f4f1e8] p-4 shadow-sm dark:border-[#333] dark:bg-[#181817]">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold">Anthropic</h3>
-          <p className="text-xs text-neutral-500">Claude API-Schlüssel lokal verwalten und Verbindung testen.</p>
+          <h3 className="text-base font-semibold">Anthropic</h3>
+          <p className="mt-1 text-xs leading-5 text-neutral-500">Claude API-Schlüssel lokal speichern, Verbindung prüfen und für Optimierungen verwenden.</p>
         </div>
-        <span className={`rounded px-2 py-1 text-xs font-medium ${isConnected ? 'bg-[#e5f5e8] text-[#23713a]' : 'bg-[#ece8dc] text-neutral-600 dark:bg-[#2b2b29] dark:text-neutral-300'}`}>
+        <span className={`shrink-0 rounded px-2.5 py-1 text-xs font-semibold ${isConnected ? 'bg-[#e5f5e8] text-[#23713a]' : 'bg-[#ece8dc] text-neutral-600 dark:bg-[#2b2b29] dark:text-neutral-300'}`}>
           {isConnected ? 'Verbunden' : 'Getrennt'}
         </span>
       </div>
@@ -218,7 +218,7 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
           </select>
         </label>
 
-        <div className="flex gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
           <input
             className="field"
             type={inputType}
@@ -252,22 +252,22 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-          <button className="icon-button" type="button" onClick={handleSave} disabled={saving}>
+        <div className="grid grid-cols-4 gap-2">
+          <button className="icon-button justify-center whitespace-nowrap" type="button" onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
             Speichern
           </button>
-          <button className="icon-button" type="button" onClick={handleConnect} disabled={connecting}>
+          <button className="icon-button justify-center whitespace-nowrap" type="button" onClick={handleConnect} disabled={connecting}>
             {connecting ? <Loader2 className="animate-spin" size={16} /> : <Plug size={16} />}
-            Verbindung
+            Verbinden
           </button>
-          <button className="icon-button" type="button" onClick={handleCheckConnection} disabled={checking}>
+          <button className="icon-button justify-center whitespace-nowrap" type="button" onClick={handleCheckConnection} disabled={checking}>
             {checking ? <Loader2 className="animate-spin" size={16} /> : <Wifi size={16} />}
-            Verbindung überprüfen
+            Prüfen
           </button>
-          <button className="icon-button" type="button" onClick={handleDisconnect} disabled={disconnecting || !isConnected}>
+          <button className="icon-button justify-center whitespace-nowrap" type="button" onClick={handleDisconnect} disabled={disconnecting || !isConnected}>
             {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Unplug size={16} />}
-            Verbindung trennen
+            Trennen
           </button>
         </div>
 
