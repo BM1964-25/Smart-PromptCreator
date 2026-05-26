@@ -436,11 +436,17 @@ export default function App() {
         <PromptEditor
           prompt={selectedPrompt}
           settings={settings}
+          tabs={tabs || []}
           categories={categories || []}
           onDelete={deletePrompt}
           emptyStateTitle="Dieser Arbeitsbereich ist noch leer"
           emptyStateDescription="Lege den ersten Prompt in diesem Arbeitsbereich an oder wähle links einen anderen Arbeitsbereich."
           onCreatePrompt={createPromptInActiveWorkspace}
+          onFocusPromptLocation={(tabId, categoryId, promptId) => {
+            store.setActiveTab(tabId);
+            if (categoryId) store.setActiveCategory(categoryId);
+            store.setSelectedPrompt(promptId);
+          }}
         />
       </section>
 

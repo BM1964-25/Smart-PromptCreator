@@ -1,23 +1,35 @@
 import { CheckCircle2, Copy, Save, Settings2, Sparkles, Star, Tags, Trash2, Undo2 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { normalizeAnthropicModel, optimizeWithAnthropic, suggestPromptMetadataWithAnthropic } from '../services/anthropicService';
 import { buildVariantOptimizationPrompt, defaultOptimizerPreferences, optimizeLocally, optimizeVariantLocally } from '../services/optimizerService';
 import { duplicatePrompt, findOrCreateCategory, undoLastPromptChange, updatePrompt } from '../services/promptService';
-import type { AiProvider, Category, OptimizerPreferences, Prompt, PromptVariant, PromptVariantTone, Settings } from '../types/domain';
+import type { AiProvider, Category, OptimizerPreferences, Prompt, PromptVariant, PromptVariantTone, Settings, WorkspaceTab } from '../types/domain';
 import { decryptSecret } from '../utils/crypto';
 
 interface PromptEditorProps {
   prompt?: Prompt;
   settings?: Settings;
+  tabs: WorkspaceTab[];
   categories: Category[];
   onDelete: (prompt: Prompt) => void;
   emptyStateTitle?: string;
   emptyStateDescription?: string;
   onCreatePrompt?: () => void;
+  onFocusPromptLocation?: (tabId: string, categoryId: string | undefined, promptId: string) => void;
 }
 
-export function PromptEditor({ prompt, settings, categories, onDelete, emptyStateTitle, emptyStateDescription, onCreatePrompt }: PromptEditorProps) {
+export function PromptEditor({
+  prompt,
+  settings,
+  tabs,
+  categories,
+  onDelete,
+  emptyStateTitle,
+  emptyStateDescription,
+  onCreatePrompt,
+  onFocusPromptLocation
+}: PromptEditorProps) {
   const [provider, setProvider] = useState<AiProvider>('anthropic');
   const [showExpertOptions, setShowExpertOptions] = useState(false);
   const [optimizerPreferences, setOptimizerPreferences] = useState<OptimizerPreferences>(defaultOptimizerPreferences);
@@ -29,6 +41,12 @@ export function PromptEditor({ prompt, settings, categories, onDelete, emptyStat
   const optimizedStats = getTextStats(prompt?.optimizedContent || '');
   const variants = getPromptVariants(prompt);
   const anthropicModel = normalizeAnthropicModel(settings?.anthropicModel);
+  const promptWorkspaceId = prompt?.tabId || tabs[0]?.id || '';
+  const promptWorkspaceCategories = useMemo(
+    () => categories.filter((category) => category.tabId === promptWorkspaceId),
+    [categories, promptWorkspaceId]
+  );
+  const promptCategoryId = promptWorkspaceCategories.some((category) => category.id === prompt?.categoryId) ? prompt?.categoryId || '' : '';
 
   if (!prompt) {
     return (
@@ -187,6 +205,13 @@ export function PromptEditor({ prompt, settings, categories, onDelete, emptyStat
     await updatePrompt(prompt.id!, { tags: prompt.tags.filter((tag) => tag !== tagToRemove) });
   }
 
+  async function duplicateCurrentPrompt() {
+    if (!prompt) return;
+    const copy = await duplicatePrompt(prompt);
+    onFocusPromptLocation?.(copy.tabId, copy.categoryId || undefined, copy.id!);
+    toast.success('Prompt dupliziert');
+  }
+
   async function undoLastChange() {
     if (!prompt?.id) return;
     const restored = await undoLastPromptChange(prompt.id);
@@ -213,7 +238,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete, emptyStat
             <span>Favorit</span>
             <Star size={17} className={prompt.favorite ? 'fill-amber text-amber' : ''} />
           </button>
-          <button className="toolbar-action" aria-label="Duplizieren" onClick={() => duplicatePrompt(prompt)}>
+          <button className="toolbar-action" aria-label="Duplizieren" onClick={duplicateCurrentPrompt}>
             <span>Duplizieren</span>
             <Copy size={17} />
           </button>
@@ -246,25 +271,21 @@ export function PromptEditor({ prompt, settings, categories, onDelete, emptyStat
                 <WorkflowStep
                   number="01"
                   title="Prompt-Ziel klären"
-                  subtitle={['Was soll entstehen?', 'Für wen ist es gedacht?', 'Welche Infos fehlen?']}
                   active={Boolean(prompt.content.trim())}
                 />
                 <WorkflowStep
                   number="02"
                   title="Masterstruktur aufbauen"
-                  subtitle={['Rolle und Ziel definieren.', 'Kontext einordnen.', 'Aufgaben klar gliedern.']}
                   active={Boolean(prompt.content.trim() && prompt.categoryId)}
                 />
                 <WorkflowStep
                   number="03"
                   title="Varianten vergleichen"
-                  subtitle={['Kompakt schnell nutzen.', 'Premium sauber ausarbeiten.', 'Beste Richtung wählen.']}
                   active={variants.some((variant) => variant.content.trim())}
                 />
                 <WorkflowStep
                   number="04"
                   title="Prompt finalisieren"
-                  subtitle={['Ausgabe übernehmen.', 'Details nachschärfen.', 'Speichern und wiederfinden.']}
                   active={Boolean(prompt.optimizedContent.trim())}
                 />
               </div>
@@ -367,23 +388,49 @@ export function PromptEditor({ prompt, settings, categories, onDelete, emptyStat
                 Füllt leere Titel- und Beschreibungsfelder per KI. Kategorie wird vorgeschlagen, Tags werden ergänzt.
               </div>
               <div className="grid grid-cols-[1fr_auto] gap-2">
-                <label className="grid gap-1 text-xs font-medium text-neutral-500">
-                  Kategorie zum Speichern
-                  <select
-                    className="field"
-                    value={prompt.categoryId}
-                    onChange={(event) => {
-                      const category = categories.find((item) => item.id === event.target.value);
-                      updatePrompt(prompt.id!, { categoryId: event.target.value, tabId: category?.tabId || prompt.tabId });
-                    }}
-                  >
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div className="grid gap-2">
+                  <label className="grid gap-1 text-xs font-medium text-neutral-500">
+                    Arbeitsbereich
+                    <select
+                      className="field"
+                      value={promptWorkspaceId}
+                      onChange={async (event) => {
+                        const nextTabId = event.target.value;
+                        const categoryStillFits = categories.some((category) => category.id === prompt.categoryId && category.tabId === nextTabId);
+                        const nextCategoryId = categoryStillFits ? prompt.categoryId : '';
+                        await updatePrompt(prompt.id!, { tabId: nextTabId, categoryId: nextCategoryId });
+                        onFocusPromptLocation?.(nextTabId, nextCategoryId || undefined, prompt.id!);
+                        toast.success('Prompt verschoben');
+                      }}
+                    >
+                      {tabs.map((tab) => (
+                        <option key={tab.id} value={tab.id}>
+                          {tab.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-xs font-medium text-neutral-500">
+                    Kategorie zum Speichern
+                    <select
+                      className="field"
+                      value={promptCategoryId}
+                      onChange={async (event) => {
+                        const category = categories.find((item) => item.id === event.target.value);
+                        const nextTabId = category?.tabId || promptWorkspaceId;
+                        await updatePrompt(prompt.id!, { categoryId: event.target.value, tabId: nextTabId });
+                        onFocusPromptLocation?.(nextTabId, event.target.value || undefined, prompt.id!);
+                      }}
+                    >
+                      <option value="">Keine Kategorie</option>
+                      {promptWorkspaceCategories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
                 <button className="icon-button ai-button self-end" onClick={suggestMetadata} disabled={metadataBusy}>
                   <Tags size={16} /> {metadataBusy ? 'Analysiert...' : 'Titel & Metadaten'}
                 </button>
@@ -618,20 +665,13 @@ function shouldReplaceGeneratedTitle(title: string) {
   return !normalized || normalized === 'neuer prompt' || normalized.endsWith(' kopie');
 }
 
-function WorkflowStep({ number, title, subtitle, active }: { number: string; title: string; subtitle: string[]; active?: boolean }) {
+function WorkflowStep({ number, title, active }: { number: string; title: string; active?: boolean }) {
   return (
     <div className="relative z-10 grid justify-items-center gap-2 text-center">
       <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-bold ${active ? 'bg-[#111a20] text-white shadow-soft dark:bg-[#f3f0e8] dark:text-[#111]' : 'bg-[#ece8dc] text-neutral-600 dark:bg-[#2b2b29] dark:text-neutral-300'}`}>
         {number}
       </span>
-      <span className="grid gap-1">
-        <span className="text-[13px] font-bold leading-4 text-neutral-900 dark:text-neutral-100">{title}</span>
-        <span className="grid min-h-[60px] content-start text-[12px] leading-5 text-neutral-500 dark:text-neutral-400">
-          {subtitle.map((line) => (
-            <span key={line}>{line}</span>
-          ))}
-        </span>
-      </span>
+      <span className="text-[13px] font-bold leading-4 text-neutral-900 dark:text-neutral-100">{title}</span>
     </div>
   );
 }

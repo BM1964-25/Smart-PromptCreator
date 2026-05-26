@@ -67,6 +67,27 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
               </ul>
             </HelpSection>
 
+            <HelpSection icon={<CheckCircle2 size={18} />} title="Workflow in 4 Schritten">
+              <ol>
+                <li>
+                  <strong>Prompt-Ziel klären:</strong> Legen Sie fest, welches Ergebnis entstehen soll, für wen es gedacht ist und
+                  welche Informationen unbedingt enthalten sein müssen.
+                </li>
+                <li>
+                  <strong>Masterstruktur aufbauen:</strong> Bringen Sie den Prompt in eine klare Struktur mit Rolle, Ziel, Kontext,
+                  Aufgaben, Ausgabeformat und Qualitätsanforderungen.
+                </li>
+                <li>
+                  <strong>Varianten vergleichen:</strong> Nutzen Sie Kompakt für schnelle Ergebnisse und Premium für anspruchsvollere
+                  Aufgaben. Vergleichen Sie beide Varianten und wählen Sie die bessere Grundlage.
+                </li>
+                <li>
+                  <strong>Prompt finalisieren:</strong> Übernehmen Sie die beste Ausgabe, schärfen Sie Details nach, speichern Sie
+                  Metadaten und machen Sie den Prompt über Kategorien, Tags oder Favoriten wiederauffindbar.
+                </li>
+              </ol>
+            </HelpSection>
+
             <HelpSection icon={<CheckCircle2 size={18} />} title="Varianten und Rückgängig">
               <ul>
                 <li>Kompakt ist für schnelle, direkt kopierbare Prompts gedacht.</li>
@@ -74,6 +95,17 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
                 <li>Der Abschnitt Ziel hilft, den gewünschten Nutzen und das erwartete Ergebnis ausdrücklich festzuhalten.</li>
                 <li>Mit „Rückgängig“ stellen Sie den letzten gespeicherten Prompt-Zustand wieder her.</li>
                 <li>Mit „Duplizieren“ erzeugen Sie eine Kopie, um Varianten gefahrlos weiterzuentwickeln.</li>
+              </ul>
+            </HelpSection>
+
+            <HelpSection icon={<Briefcase size={18} />} title="Prompts verschieben oder kopieren">
+              <ul>
+                <li>Zum Verschieben wählen Sie einen Prompt aus und öffnen rechts die Metadaten.</li>
+                <li>Im Feld „Arbeitsbereich“ wählen Sie den Ziel-Arbeitsbereich aus.</li>
+                <li>Danach zeigt „Kategorie zum Speichern“ nur noch Kategorien dieses Arbeitsbereichs.</li>
+                <li>Zum Kopieren klicken Sie zuerst auf „Duplizieren“. Die Kopie wird direkt geöffnet.</li>
+                <li>Ändern Sie anschließend bei der Kopie den Arbeitsbereich und wählen Sie bei Bedarf eine passende Kategorie.</li>
+                <li>So bleibt das Original erhalten, während die Kopie im neuen Arbeitsbereich weiterbearbeitet werden kann.</li>
               </ul>
             </HelpSection>
 
@@ -156,15 +188,23 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
               <CheckCircle2 size={18} className="text-brand" />
               Empfohlener Arbeitsablauf
             </div>
-            <ol className="list-decimal space-y-1 pl-5 text-neutral-600 dark:text-neutral-300">
-              <li>Arbeitsbereich wählen oder neu anlegen.</li>
-              <li>Kategorie wählen oder erstellen.</li>
-              <li>Neuen Prompt erstellen und Rohtext eingeben.</li>
-              <li>Optimierungseinstellungen passend zum Ziel wählen.</li>
-              <li>Bei Bedarf Anthropic in den Einstellungen verbinden oder lokal optimieren.</li>
-              <li>Kompakt- und Premium-Variante vergleichen.</li>
-              <li>Die beste Ausgabe übernehmen, prüfen, nachschärfen und favorisieren.</li>
-              <li>Über Suche, Kategorien, Tags oder Favoriten später wiederfinden.</li>
+            <ol className="list-decimal space-y-2 pl-5 text-neutral-600 dark:text-neutral-300">
+              <li>
+                <strong>Arbeitsbereich vorbereiten:</strong> Wählen Sie den passenden Arbeitsbereich oder legen Sie einen neuen an.
+                Erstellen Sie bei Bedarf eine Kategorie, damit der Prompt später fachlich sauber einsortiert ist.
+              </li>
+              <li>
+                <strong>Prompt erfassen:</strong> Klicken Sie auf „Prompt“, tragen Sie die Rohidee im Eingabefeld ein und ergänzen Sie
+                Titel, Beschreibung, Kategorie und Tags in den Metadaten.
+              </li>
+              <li>
+                <strong>Optimieren und vergleichen:</strong> Wählen Sie Ziel, Zielgruppe, Stil, Format, Stärke und Sprache. Optimieren
+                Sie den Prompt und vergleichen Sie bei Bedarf die Kompakt- und Premium-Variante.
+              </li>
+              <li>
+                <strong>Übernehmen und pflegen:</strong> Übernehmen Sie die beste Ausgabe, prüfen Sie sie fachlich, favorisieren Sie
+                wichtige Prompts und nutzen Sie Suche, Kategorien oder Tags zum Wiederfinden.
+              </li>
             </ol>
           </section>
         </div>
@@ -180,7 +220,7 @@ function HelpSection({ icon, title, children }: { icon: ReactNode; title: string
         <span className="text-brand">{icon}</span>
         {title}
       </div>
-      <div className="space-y-2 text-neutral-600 dark:text-neutral-300 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
+      <div className="space-y-2 text-neutral-600 dark:text-neutral-300 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
         {children}
       </div>
     </section>
