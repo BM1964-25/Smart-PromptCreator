@@ -119,9 +119,11 @@ export function AnthropicApiKeyManager({ settings }: AnthropicApiKeyManagerProps
 
     setConnecting(true);
     try {
-      setIsConnected(true);
-      setFeedback({ tone: 'success', message: 'Anthropic-Verbindung fuer diese Sitzung aktiviert.' });
-      toast.success('Anthropic-Verbindung aktiviert');
+      setFeedback({ tone: 'info', message: 'Anthropic-Verbindung wird hergestellt und geprueft...' });
+      const result = await testAnthropicConnection(activeApiKey);
+      setIsConnected(result.ok);
+      setFeedback({ tone: result.ok ? 'success' : 'error', message: result.message });
+      if (result.ok) toast.success('Anthropic-Verbindung aktiviert');
     } finally {
       setConnecting(false);
     }

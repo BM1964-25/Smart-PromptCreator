@@ -85,6 +85,9 @@ async function proxyAnthropic(request, response) {
     });
 
     const text = await upstream.text();
+    if (!upstream.ok) {
+      log(`Anthropic upstream error ${upstream.status}: ${text.slice(0, 500)}`);
+    }
     response.writeHead(upstream.status, {
       'Content-Type': upstream.headers.get('content-type') || 'application/json; charset=utf-8',
       'Access-Control-Allow-Origin': '*'
