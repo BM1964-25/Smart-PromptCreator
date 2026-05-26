@@ -1,4 +1,24 @@
-import { Briefcase, CheckCircle2, Database, KeyRound, Layers, Lightbulb, Plug, ShieldCheck, Sparkles, Tags, X } from 'lucide-react';
+import {
+  Briefcase,
+  CheckCircle2,
+  Copy,
+  Database,
+  Download,
+  FileText,
+  KeyRound,
+  Layers,
+  Lightbulb,
+  PanelLeftClose,
+  Plug,
+  Search,
+  Settings2,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Tags,
+  Upload,
+  X
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface HelpPanelProps {
@@ -21,10 +41,15 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
 
         <div className="overflow-auto p-5">
           <div className="grid gap-4 md:grid-cols-2">
-            <HelpSection icon={<Lightbulb size={18} />} title="Grundidee">
+            <HelpSection icon={<Lightbulb size={18} />} title="Grundidee und Nutzen">
               <p>
                 SMART PromptCreator ist eine lokale Prompt-Werkstatt. Die App hilft dabei, Rohideen in klare Prompts zu verwandeln,
                 Varianten zu vergleichen, optimierte Ausgaben zu übernehmen und erfolgreiche Prompts dauerhaft wiederzufinden.
+              </p>
+              <p>
+                Der wichtigste Nutzen liegt in Struktur: Gute Prompts verschwinden nicht mehr in Chatverläufen, Notizen oder einzelnen
+                Dokumenten, sondern werden zentral in einer lokalen Bibliothek gepflegt. Dadurch können bewährte Vorlagen wiederverwendet,
+                verbessert, dupliziert und für neue Aufgaben angepasst werden.
               </p>
             </HelpSection>
 
@@ -33,6 +58,21 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
                 Prompts, Arbeitsbereiche, Kategorien, Tags, Favoriten und Einstellungen werden lokal im Browser über IndexedDB gespeichert.
                 Es gibt keine zentrale Cloud-Datenbank für Prompt-Inhalte. Backups laufen über Export und Import als JSON-Datei.
               </p>
+              <p>
+                Andere Nutzer haben keinen Zugriff auf diese lokalen Inhalte. Wenn Sie den Browser-Speicher löschen, das Gerät wechseln
+                oder die App in einem anderen Browser verwenden, sind die Daten dort nicht automatisch vorhanden. Nutzen Sie deshalb
+                regelmäßig den Export, wenn Ihre Prompt-Bibliothek wichtig ist.
+              </p>
+            </HelpSection>
+
+            <HelpSection icon={<FileText size={18} />} title="Oberfläche im Überblick">
+              <ul>
+                <li>Links befindet sich die Sidebar mit Suche, neuem Prompt, Favoriten, Einstellungen, Hilfe, Arbeitsbereichen und Kategorien.</li>
+                <li>Daneben liegt die Prompt-Bibliothek. Sie zeigt alle sichtbaren Prompts des aktuellen Arbeitsbereichs und der aktiven Filter.</li>
+                <li>In der Mitte bearbeiten Sie Titel, Metadaten, Eingabe, Strukturvorgaben und den ursprünglichen Prompt.</li>
+                <li>Rechts befindet sich die KI-Werkstatt mit Optimierung, Variantenvergleich und optimierter Ausgabe.</li>
+                <li>Unten zeigt der Systemstatus Lizenz, Anthropic API-Key, lokalen Speicher und Anzahl der Bibliothekseinträge.</li>
+              </ul>
             </HelpSection>
 
             <HelpSection icon={<Briefcase size={18} />} title="Arbeitsbereiche">
@@ -43,6 +83,11 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
                 <li>Mit dem Stift benennen Sie einen Arbeitsbereich um. Mit dem Griff links kann die Reihenfolge geändert werden.</li>
                 <li>Der Button „Alle Prompts im Arbeitsbereich“ entfernt Kategorie, Suche und Favoritenfilter im aktuellen Arbeitsbereich.</li>
               </ul>
+              <p>
+                Ein Arbeitsbereich ist sinnvoll, wenn Prompts klar voneinander getrennt bleiben sollen, zum Beispiel private Prompts,
+                Kundenprojekte, Marketing, Produktivität oder interne Vorlagen. Beim Wechsel des Arbeitsbereichs zeigt die Bibliothek
+                nur die Prompts, die diesem Arbeitsbereich zugeordnet sind.
+              </p>
             </HelpSection>
 
             <HelpSection icon={<Layers size={18} />} title="Kategorien und Tags">
@@ -52,6 +97,20 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
                 <li>Mit dem Plus erstellen Sie eine neue Kategorie. Mit dem Stift benennen Sie sie um.</li>
                 <li>Tags sind zusätzliche Suchbegriffe innerhalb eines Prompts und können mehrere Themen verbinden.</li>
                 <li>Favoriten werden im aktuell aktiven Arbeitsbereich gefiltert.</li>
+              </ul>
+              <p>
+                Kategorien eignen sich für die Hauptordnung. Tags eignen sich für Querverbindungen. Ein Prompt kann zum Beispiel in
+                der Kategorie „Marketing“ liegen und zusätzlich die Tags „linkedin“, „positionierung“ und „content-creation“ tragen.
+              </p>
+            </HelpSection>
+
+            <HelpSection icon={<Search size={18} />} title="Suchen und Filtern">
+              <ul>
+                <li>Die globale Suche in der Sidebar durchsucht Titel, Inhalt und Tags.</li>
+                <li>Die Suche in der Prompt-Bibliothek filtert die aktuell angezeigten Prompts.</li>
+                <li>Über Favoriten zeigen Sie nur markierte Prompts im aktuellen Arbeitsbereich.</li>
+                <li>Über Kategorien grenzen Sie die Bibliothek fachlich ein.</li>
+                <li>„Auswahl zurücksetzen“ entfernt aktive Filter und zeigt wieder den gesamten Arbeitsbereich.</li>
               </ul>
             </HelpSection>
 
@@ -65,6 +124,10 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
                 <li>Nutzen Sie „2 Varianten“, um Kompakt und Premium gegenüberzustellen.</li>
                 <li>Übernehmen Sie die bessere Variante in die optimierte Ausgabe und bearbeiten Sie sie bei Bedarf nach.</li>
               </ul>
+              <p>
+                Die Eingabe darf eine grobe Idee, ein alter Prompt, eine Aufgabenbeschreibung oder ein kurzer Arbeitsauftrag sein.
+                Je klarer Ziel, Zielgruppe und Ausgabeformat gewählt werden, desto brauchbarer wird die optimierte Ausgabe.
+              </p>
             </HelpSection>
 
             <HelpSection icon={<CheckCircle2 size={18} />} title="Workflow in 4 Schritten">
@@ -88,6 +151,33 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
               </ol>
             </HelpSection>
 
+            <HelpSection icon={<Settings2 size={18} />} title="Strukturvorgaben einstellen">
+              <ul>
+                <li><strong>Ziel:</strong> Legt fest, ob der Prompt für Schreiben, Coding, Marketing, Analyse, Bildprompts oder Automatisierung gedacht ist.</li>
+                <li><strong>Zielgruppe:</strong> Passt Sprache und Detailtiefe an, zum Beispiel für Einsteiger, Experten, Kunden oder Management.</li>
+                <li><strong>Stil:</strong> Steuert die Tonalität, etwa professionell, präzise, kreativ, kurz, ausführlich oder überzeugend.</li>
+                <li><strong>Format:</strong> Definiert die gewünschte Ausgabe, zum Beispiel Markdown, Liste, Tabelle, JSON, Schritte oder Freitext.</li>
+                <li><strong>Stärke:</strong> Bestimmt, ob schnell, ausgewogen oder besonders ausführlich optimiert werden soll.</li>
+                <li><strong>Sprache:</strong> Lässt die Sprache automatisch erkennen oder erzwingt Deutsch bzw. Englisch.</li>
+                <li><strong>Rückfragen:</strong> Ergänzt fehlende Informationen als Fragen, statt stillschweigend Annahmen zu treffen.</li>
+              </ul>
+            </HelpSection>
+
+            <HelpSection icon={<Sparkles size={18} />} title="Die fünf KI-Buttons">
+              <ul>
+                <li><strong>Titel & Metadaten:</strong> Analysiert Eingabe und optimierte Ausgabe und schlägt Titel, Beschreibung, Kategorie und Tags vor.</li>
+                <li><strong>Optimieren:</strong> Erstellt aus der Eingabe einen verbesserten Zielprompt und schreibt ihn in „Optimierte Ausgabe“.</li>
+                <li><strong>2 Varianten:</strong> Erstellt eine kompakte und eine Premium-Variante zum direkten Vergleich.</li>
+                <li><strong>Verbessern bei Kompakt:</strong> Überarbeitet nur die kompakte Variante, wenn sie noch präziser oder kürzer werden soll.</li>
+                <li><strong>Verbessern bei Premium:</strong> Überarbeitet nur die Premium-Variante mit stärkerer Struktur und mehr Details.</li>
+              </ul>
+              <p>
+                Alle blau hervorgehobenen Buttons lösen eine KI- oder Optimierungsfunktion aus. Je nach Anbieter-Einstellung läuft dies
+                über Anthropic oder lokal regelbasiert. „Titel & Metadaten“ nutzt Anthropic, weil Kategorie- und Tag-Vorschläge semantisch
+                aus dem Prompt abgeleitet werden.
+              </p>
+            </HelpSection>
+
             <HelpSection icon={<CheckCircle2 size={18} />} title="Varianten und Rückgängig">
               <ul>
                 <li>Kompakt ist für schnelle, direkt kopierbare Prompts gedacht.</li>
@@ -95,6 +185,29 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
                 <li>Der Abschnitt Ziel hilft, den gewünschten Nutzen und das erwartete Ergebnis ausdrücklich festzuhalten.</li>
                 <li>Mit „Rückgängig“ stellen Sie den letzten gespeicherten Prompt-Zustand wieder her.</li>
                 <li>Mit „Duplizieren“ erzeugen Sie eine Kopie, um Varianten gefahrlos weiterzuentwickeln.</li>
+              </ul>
+              <p>
+                Empfohlen ist: erst die Eingabe grob formulieren, dann „2 Varianten“ erzeugen, beide Fassungen lesen, die bessere Variante
+                übernehmen und anschließend in der optimierten Ausgabe manuell finalisieren.
+              </p>
+            </HelpSection>
+
+            <HelpSection icon={<Copy size={18} />} title="Übernehmen, kopieren und weiterverwenden">
+              <ul>
+                <li>„Übernehmen“ kopiert eine Variante in die optimierte Ausgabe.</li>
+                <li>Das Kopier-Icon bei „Optimierte Ausgabe“ kopiert den fertigen Zielprompt in die Zwischenablage.</li>
+                <li>Die optimierte Ausgabe kann manuell nachbearbeitet werden, bevor sie in ein KI-Tool übernommen wird.</li>
+                <li>Wort- und Zeichenzähler helfen einzuschätzen, wie lang Eingabe, Varianten und Zielprompt sind.</li>
+              </ul>
+            </HelpSection>
+
+            <HelpSection icon={<Star size={18} />} title="Favoriten, Speichern und Löschen">
+              <ul>
+                <li>Mit „Favorit“ markieren Sie besonders wichtige Prompts für schnellen Zugriff.</li>
+                <li>Änderungen werden fortlaufend lokal gespeichert. Der Button „Speichern“ dient als sichtbarer Arbeitsanker.</li>
+                <li>„Duplizieren“ erstellt eine Kopie des aktuellen Prompts und öffnet sie direkt.</li>
+                <li>„Löschen“ entfernt den ausgewählten Prompt nach Bestätigung aus der lokalen Bibliothek.</li>
+                <li>Beim Löschen von Arbeitsbereichen oder Kategorien bleiben Prompts erhalten, verlieren aber die jeweilige Zuordnung.</li>
               </ul>
             </HelpSection>
 
@@ -109,12 +222,62 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
               </ul>
             </HelpSection>
 
+            <HelpSection icon={<PanelLeftClose size={18} />} title="Mehr Platz schaffen">
+              <ul>
+                <li>Die Sidebar kann über das Einklapp-Icon links unten reduziert werden.</li>
+                <li>Die Prompt-Bibliothek kann über das Icon im Bibliothekskopf eingeklappt werden.</li>
+                <li>Im eingeklappten Zustand bleiben Orientierung und Anzahl der sichtbaren Prompts erhalten.</li>
+                <li>Das ist hilfreich, wenn die eigentliche Prompt-Werkstatt mehr Breite benötigt.</li>
+              </ul>
+            </HelpSection>
+
+            <HelpSection icon={<Download size={18} />} title="Export als Backup">
+              <ul>
+                <li>Der Export-Button in der Sidebar erstellt eine JSON-Datei Ihrer lokalen Prompt-Bibliothek.</li>
+                <li>Diese Datei dient als Sicherung, bevor größere Änderungen, Löschungen oder Browserwechsel vorgenommen werden.</li>
+                <li>Speichern Sie Exporte an einem sicheren Ort, wenn die enthaltenen Prompts geschäftlich oder vertraulich sind.</li>
+                <li>Ein Export ersetzt keine automatische Cloud-Synchronisierung. Er ist bewusst eine lokale Sicherung.</li>
+              </ul>
+            </HelpSection>
+
+            <HelpSection icon={<Upload size={18} />} title="Import aus JSON">
+              <ul>
+                <li>Der Import-Button liest eine zuvor exportierte JSON-Datei ein.</li>
+                <li>Importierte Inhalte werden als zusätzliche Einträge übernommen, damit vorhandene Daten nicht stillschweigend überschrieben werden.</li>
+                <li>Nach einem Import sollten Arbeitsbereiche, Kategorien und Stichproben einzelner Prompts geprüft werden.</li>
+                <li>Wenn eine JSON-Datei nicht importiert werden kann, prüfen Sie, ob sie aus SMART PromptCreator stammt und vollständig gespeichert wurde.</li>
+              </ul>
+            </HelpSection>
+
             <HelpSection icon={<KeyRound size={18} />} title="Anthropic API-Schlüssel">
               <p>
                 Für Anthropic-Optimierungen benötigt SMART PromptCreator einen API-Schlüssel aus der Anthropic Console.
                 Der Schlüssel wird lokal verschlüsselt gespeichert. Bei Anthropic-Optimierungen sendet die App den jeweiligen Prompt
                 über den lokalen Proxy an die Anthropic API. Bei lokaler Optimierung werden keine Inhalte an Anthropic gesendet.
               </p>
+              <p>
+                Ein gespeicherter API-Key bedeutet nur, dass ein Schlüssel lokal vorhanden ist. Ob die Verbindung funktioniert, prüfen
+                Sie über „Verbindung überprüfen“. Ein normaler Claude.ai-Account oder Claude-Pro-Plan ersetzt keinen API-Key für die
+                Anthropic Console.
+              </p>
+            </HelpSection>
+
+            <HelpSection icon={<Plug size={18} />} title="Anthropic oder lokale Optimierung">
+              <ul>
+                <li><strong>Anthropic:</strong> Sendet den jeweiligen Prompt über den lokalen Proxy an Claude und erzeugt hochwertigere Vorschläge.</li>
+                <li><strong>Lokal:</strong> Verarbeitet den Text im Browser mit eingebauten Regeln und sendet keine Inhalte an Anthropic.</li>
+                <li>Die lokale Optimierung ist gut für einfache Strukturierung, aber weniger flexibel und weniger kreativ.</li>
+                <li>Anthropic ist sinnvoll, wenn Qualität, Variantenbildung und präzise Metadaten wichtiger sind als reine Offline-Verarbeitung.</li>
+              </ul>
+            </HelpSection>
+
+            <HelpSection icon={<ShieldCheck size={18} />} title="Lizenz und Nutzerzugriff">
+              <ul>
+                <li>Die Lizenz steuert die Nutzung der App, speichert aber keine Prompt-Inhalte in einer zentralen Cloud-Datenbank.</li>
+                <li>Pro Lizenz ist ein persönlicher Nutzerzugriff vorgesehen.</li>
+                <li>Für Aktivierung und Prüfung kann eine Verbindung zum Lizenzdienst erforderlich sein.</li>
+                <li>Der Lizenzstatus wird unten in der Sidebar unter „Systemstatus“ angezeigt.</li>
+              </ul>
             </HelpSection>
 
             <HelpSection icon={<ShieldCheck size={18} />} title="Wichtig zu beachten">
@@ -124,6 +287,16 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
                 <li>Regelmäßig JSON-Backups exportieren, besonders vor größeren Aufräumarbeiten.</li>
                 <li>Beim Löschen von Arbeitsbereichen oder Kategorien bleiben Prompts erhalten, verlieren aber die Zuordnung.</li>
                 <li>API-Keys und Lizenzdaten sorgfältig behandeln und nicht in exportierten Prompt-Texten ablegen.</li>
+              </ul>
+            </HelpSection>
+
+            <HelpSection icon={<Plug size={18} />} title="Typische Probleme lösen">
+              <ul>
+                <li><strong>API-Verbindung schlägt fehl:</strong> Prüfen Sie API-Key, lokalen Server, Internetverbindung und ob der Key wirklich aus der Anthropic Console stammt.</li>
+                <li><strong>„API-Key gespeichert“, aber keine Verbindung:</strong> Der Schlüssel ist lokal vorhanden, kann aber ungültig, gesperrt oder ohne Billing sein.</li>
+                <li><strong>Keine Prompts sichtbar:</strong> Setzen Sie Suche, Favoriten und Kategorieauswahl zurück oder wechseln Sie den Arbeitsbereich.</li>
+                <li><strong>Import klappt nicht:</strong> Prüfen Sie, ob die Datei eine gültige JSON-Sicherung von SMART PromptCreator ist.</li>
+                <li><strong>Daten fehlen nach Browserwechsel:</strong> Lokale Daten werden nicht automatisch übertragen. Importieren Sie vorher exportierte JSON-Backups.</li>
               </ul>
             </HelpSection>
           </div>
