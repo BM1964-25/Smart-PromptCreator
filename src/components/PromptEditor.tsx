@@ -16,7 +16,6 @@ interface PromptEditorProps {
 
 export function PromptEditor({ prompt, settings, categories, onDelete }: PromptEditorProps) {
   const [provider, setProvider] = useState<AiProvider>('anthropic');
-  const [anthropicModel, setAnthropicModel] = useState(settings?.anthropicModel || 'claude-3-5-haiku-latest');
   const [showExpertOptions, setShowExpertOptions] = useState(false);
   const [optimizerPreferences, setOptimizerPreferences] = useState<OptimizerPreferences>(defaultOptimizerPreferences);
   const [busy, setBusy] = useState(false);
@@ -37,7 +36,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
       if (provider === 'anthropic') {
         const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
         if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
-        optimized = await optimizeWithAnthropic(apiKey, prompt.content, optimizerPreferences, anthropicModel);
+        optimized = await optimizeWithAnthropic(apiKey, prompt.content, optimizerPreferences);
       } else {
         optimized = optimizeLocally(prompt.content, optimizerPreferences);
       }
@@ -72,7 +71,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
     try {
       const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
       if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
-      const suggestion = await suggestPromptMetadataWithAnthropic(apiKey, prompt.content, prompt.optimizedContent, categories, anthropicModel);
+      const suggestion = await suggestPromptMetadataWithAnthropic(apiKey, prompt.content, prompt.optimizedContent, categories);
       const category = await findOrCreateCategory(prompt.tabId, suggestion.categoryName);
       await updatePrompt(prompt.id!, {
         title: shouldReplaceGeneratedTitle(prompt.title) ? suggestion.title || prompt.title : prompt.title,
@@ -312,20 +311,19 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
               </button>
             </div>
             {showExpertOptions && (
-              <div className="grid grid-cols-2 gap-2 rounded border border-line bg-white p-3 dark:border-[#3a3a38] dark:bg-[#181817]">
+              <div className="grid gap-3 rounded border border-line bg-white p-3 dark:border-[#3a3a38] dark:bg-[#181817]">
                 <label className="grid gap-1 text-xs font-medium text-neutral-500">
                   Anbieter
                   <select className="field" value={provider} onChange={(event) => setProvider(event.target.value as AiProvider)}>
                     <option value="anthropic">Anthropic</option>
-                    <option value="local">Lokale Vorlage</option>
+                    <option value="local">Lokal</option>
                   </select>
                 </label>
-                {provider === 'anthropic' && (
-                  <label className="grid gap-1 text-xs font-medium text-neutral-500">
-                    Anthropic Modell
-                    <input className="field" value={anthropicModel} onChange={(event) => setAnthropicModel(event.target.value)} />
-                  </label>
-                )}
+                <div className="rounded border border-line bg-[#f9f8f3] p-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300">
+                  {provider === 'anthropic'
+                    ? 'Anthropic nutzt deinen gespeicherten API-Schluessel, sendet den Prompt an Claude und erzeugt eine KI-optimierte Version. Dafuer ist eine aktive Verbindung erforderlich.'
+                    : 'Lokal verarbeitet den Prompt nur im Browser mit einer eingebauten Vorlage. Es werden keine Inhalte an Anthropic gesendet, die Optimierung ist dafuer regelbasiert und weniger kreativ.'}
+                </div>
               </div>
             )}
           </div>
