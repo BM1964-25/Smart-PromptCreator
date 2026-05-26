@@ -10,6 +10,7 @@ import {
   Lightbulb,
   PanelLeftClose,
   Plug,
+  RotateCcw,
   Search,
   Settings2,
   ShieldCheck,
@@ -163,13 +164,14 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
               </ul>
             </HelpSection>
 
-            <HelpSection icon={<Sparkles size={18} />} title="Die fünf KI-Buttons">
+            <HelpSection icon={<Sparkles size={18} />} title="Die wichtigsten KI-Buttons">
               <ul>
                 <li><strong>Titel & Metadaten:</strong> Analysiert Eingabe und optimierte Ausgabe und schlägt Titel, Beschreibung, Kategorie und Tags vor.</li>
                 <li><strong>Optimieren:</strong> Erstellt aus der Eingabe einen verbesserten Zielprompt und schreibt ihn in „Optimierte Ausgabe“.</li>
                 <li><strong>2 Varianten:</strong> Erstellt eine kompakte und eine Premium-Variante zum direkten Vergleich.</li>
                 <li><strong>Verbessern bei Kompakt:</strong> Überarbeitet nur die kompakte Variante, wenn sie noch präziser oder kürzer werden soll.</li>
                 <li><strong>Verbessern bei Premium:</strong> Überarbeitet nur die Premium-Variante mit stärkerer Struktur und mehr Details.</li>
+                <li><strong>Weiter verbessern:</strong> Übernimmt die optimierte Ausgabe als neue Eingabe, damit eine zweite bewusste Optimierungsrunde gestartet werden kann.</li>
               </ul>
               <p>
                 Alle blau hervorgehobenen Buttons lösen eine KI- oder Optimierungsfunktion aus. Je nach Anbieter-Einstellung läuft dies
@@ -198,6 +200,16 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
                 <li>Das Kopier-Icon bei „Optimierte Ausgabe“ kopiert den fertigen Zielprompt in die Zwischenablage.</li>
                 <li>Die optimierte Ausgabe kann manuell nachbearbeitet werden, bevor sie in ein KI-Tool übernommen wird.</li>
                 <li>Wort- und Zeichenzähler helfen einzuschätzen, wie lang Eingabe, Varianten und Zielprompt sind.</li>
+              </ul>
+            </HelpSection>
+
+            <HelpSection icon={<RotateCcw size={18} />} title="Optimierungsschleifen sinnvoll nutzen">
+              <ul>
+                <li>„Weiter verbessern“ übernimmt die optimierte Ausgabe als neue Eingabe und leert die bisherige optimierte Ausgabe.</li>
+                <li>Danach können Ziel, Zielgruppe, Stil, Format, Stärke oder Sprache angepasst und erneut optimiert werden.</li>
+                <li>Sinnvoll ist das, wenn die nächste Runde ein klares Ziel hat, zum Beispiel präziser, kürzer, ausführlicher oder stärker auf eine Zielgruppe ausgerichtet.</li>
+                <li>Weniger sinnvoll sind viele automatische Wiederholungen ohne neue Vorgabe, weil dabei konkrete Details verloren gehen können.</li>
+                <li>Empfohlen ist: Ausgabe lesen, Ziel für die nächste Runde festlegen, dann erst „Weiter verbessern“ und erneut optimieren.</li>
               </ul>
             </HelpSection>
 

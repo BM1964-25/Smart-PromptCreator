@@ -1,4 +1,4 @@
-import { CheckCircle2, Copy, Save, Settings2, Sparkles, Star, Tags, Trash2, Undo2 } from 'lucide-react';
+import { CheckCircle2, Copy, RotateCcw, Save, Settings2, Sparkles, Star, Tags, Trash2, Undo2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { normalizeAnthropicModel, optimizeWithAnthropic, suggestPromptMetadataWithAnthropic } from '../services/anthropicService';
@@ -171,6 +171,21 @@ export function PromptEditor({
     if (!prompt.optimizedContent.trim()) return;
     await navigator.clipboard.writeText(prompt.optimizedContent);
     toast.success('Optimierte Version kopiert');
+  }
+
+  async function continueWithOptimizedContent() {
+    if (!prompt) return;
+    if (!prompt.optimizedContent.trim()) {
+      toast.error('Es gibt noch keine optimierte Ausgabe.');
+      return;
+    }
+
+    await updatePrompt(prompt.id!, {
+      content: prompt.optimizedContent,
+      optimizedContent: '',
+      variants: []
+    });
+    toast.success('Optimierte Ausgabe als neue Eingabe übernommen');
   }
 
   async function suggestMetadata() {
@@ -578,12 +593,20 @@ export function PromptEditor({
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold">Optimierte Ausgabe</h2>
-                <p className="text-xs text-neutral-500">Direkt kopierbarer Zielprompt</p>
+                <p className="text-xs text-neutral-500">Direkt kopieren oder als nächste Eingabe weiter verbessern.</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 <span className="rounded bg-[#e3f1ed] px-2 py-1 text-xs text-brand dark:bg-[#123a34]">
                   {optimizedStats.words} Wörter · {optimizedStats.characters} Zeichen
                 </span>
+                <button
+                  className="icon-button h-9 justify-center px-2.5 text-xs"
+                  title="Optimierte Ausgabe als neue Eingabe übernehmen"
+                  onClick={continueWithOptimizedContent}
+                  disabled={!prompt.optimizedContent.trim()}
+                >
+                  <RotateCcw size={15} /> Weiter verbessern
+                </button>
                 <button className="icon-only" title="Optimierte Version kopieren" onClick={copyOptimizedContent} disabled={!prompt.optimizedContent.trim()}>
                   <Copy size={16} />
                 </button>
