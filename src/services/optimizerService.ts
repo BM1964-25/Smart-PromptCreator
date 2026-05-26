@@ -121,7 +121,9 @@ export function buildVariantOptimizationPrompt(content: string, preferences: Opt
           'Aufgaben: 1., 2., 3.',
           'Ausgabeformat: Format, Länge, Stil, Sprache.',
           'Qualitätsanforderungen: präzise, analytisch, professionell, keine Floskeln, Annahmen kennzeichnen, fehlende Informationen als Rückfragen ausgeben, keine erfundenen Fakten.',
-          'Der Abschnitt Ziel muss explizit vorhanden und konkret formuliert sein.'
+          'Der Abschnitt Ziel muss explizit vorhanden und konkret formuliert sein.',
+          'Schreibe Abschnittsüberschriften immer alleinstehend mit Doppelpunkt, z. B. "Rolle:" und den dazugehörigen Text erst in der nächsten Zeile.',
+          'Verwende keine Markdown-Überschriften mit # oder ##.'
         ];
 
   return [
