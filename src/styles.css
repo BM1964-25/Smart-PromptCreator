@@ -26,6 +26,14 @@ select {
   @apply border-brand bg-[#e3f1ed] text-brand dark:bg-[#123a34];
 }
 
+.icon-button.ai-button {
+  @apply border-[#8dcfbd] bg-[#dff3ee] text-[#0f7668] shadow-sm hover:border-[#0f7668] hover:bg-[#cdebe4] hover:text-[#0b5f55] dark:border-[#1f6f63] dark:bg-[#102c27] dark:text-[#9ddbd0] dark:hover:border-[#54c7b7] dark:hover:bg-[#143a34] dark:hover:text-[#c4f4ec];
+}
+
+.icon-button.ai-button:disabled {
+  @apply cursor-not-allowed border-[#b8d8d1] bg-[#edf6f3] text-[#6c9b91] opacity-60 hover:border-[#b8d8d1] hover:bg-[#edf6f3] hover:text-[#6c9b91] dark:border-[#244a44] dark:bg-[#14231f] dark:text-[#6ba99e] dark:hover:border-[#244a44] dark:hover:bg-[#14231f] dark:hover:text-[#6ba99e];
+}
+
 .icon-only {
   @apply relative grid h-9 min-w-9 place-items-center rounded border border-line bg-white text-neutral-600 transition hover:border-brand hover:text-brand dark:border-[#3a3a38] dark:bg-[#151515] dark:text-neutral-300;
 }

@@ -365,7 +365,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
                     ))}
                   </select>
                 </label>
-                <button className="icon-button self-end" onClick={suggestMetadata} disabled={metadataBusy}>
+                <button className="icon-button ai-button self-end" onClick={suggestMetadata} disabled={metadataBusy}>
                   <Tags size={16} /> {metadataBusy ? 'Analysiert...' : 'Titel & Metadaten'}
                 </button>
               </div>
@@ -427,7 +427,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
               <button className="icon-button" onClick={() => setShowExpertOptions((current) => !current)}>
                 <Settings2 size={16} /> Expertenmodus
               </button>
-              <button className="icon-button ml-auto" onClick={optimize} disabled={busy}>
+              <button className="icon-button ai-button ml-auto" onClick={optimize} disabled={busy}>
                 <Sparkles size={16} /> {busy ? 'Optimiert...' : 'Optimieren'}
               </button>
             </div>
@@ -453,7 +453,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
                   <h2 className="text-sm font-semibold">Variantenvergleich</h2>
                   <p className="text-xs text-neutral-500">Kompakte und Premium-Struktur vergleichen, übernehmen und weiter verbessern.</p>
                 </div>
-                <button className="icon-button shrink-0" onClick={generateVariants} disabled={Boolean(variantBusy)}>
+                <button className="icon-button ai-button shrink-0" onClick={generateVariants} disabled={Boolean(variantBusy)}>
                   <Sparkles size={16} /> {variantBusy === 'all' ? 'Erstellt...' : '2 Varianten'}
                 </button>
               </div>
@@ -491,7 +491,7 @@ export function PromptEditor({ prompt, settings, categories, onDelete }: PromptE
                         <button className="icon-button justify-center" onClick={() => useVariant(variant)} disabled={!variant.content.trim()}>
                           <CheckCircle2 size={16} /> Übernehmen
                         </button>
-                        <button className="icon-button justify-center" onClick={() => improveVariant(variant)} disabled={Boolean(variantBusy) || !variant.content.trim()}>
+                        <button className="icon-button ai-button justify-center" onClick={() => improveVariant(variant)} disabled={Boolean(variantBusy) || !variant.content.trim()}>
                           <Sparkles size={16} /> {isBusy ? 'Verbessert...' : 'Verbessern'}
                         </button>
                       </div>
