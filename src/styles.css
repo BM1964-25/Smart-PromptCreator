@@ -27,11 +27,11 @@ select {
 }
 
 .icon-button.ai-button {
-  @apply border-[#8dcfbd] bg-[#dff3ee] text-[#0f7668] shadow-sm hover:border-[#0f7668] hover:bg-[#cdebe4] hover:text-[#0b5f55] dark:border-[#1f6f63] dark:bg-[#102c27] dark:text-[#9ddbd0] dark:hover:border-[#54c7b7] dark:hover:bg-[#143a34] dark:hover:text-[#c4f4ec];
+  @apply border-[#94b8f4] bg-[#e5efff] text-[#2563eb] shadow-sm hover:border-[#2563eb] hover:bg-[#d7e6ff] hover:text-[#1d4ed8] dark:border-[#315fbd] dark:bg-[#10213f] dark:text-[#9fc0ff] dark:hover:border-[#6ea0ff] dark:hover:bg-[#142c58] dark:hover:text-[#c7dcff];
 }
 
 .icon-button.ai-button:disabled {
-  @apply cursor-not-allowed border-[#b8d8d1] bg-[#edf6f3] text-[#6c9b91] opacity-60 hover:border-[#b8d8d1] hover:bg-[#edf6f3] hover:text-[#6c9b91] dark:border-[#244a44] dark:bg-[#14231f] dark:text-[#6ba99e] dark:hover:border-[#244a44] dark:hover:bg-[#14231f] dark:hover:text-[#6ba99e];
+  @apply cursor-not-allowed border-[#bed1f7] bg-[#eef4ff] text-[#7899d7] opacity-60 hover:border-[#bed1f7] hover:bg-[#eef4ff] hover:text-[#7899d7] dark:border-[#263d6b] dark:bg-[#141f34] dark:text-[#7497d8] dark:hover:border-[#263d6b] dark:hover:bg-[#141f34] dark:hover:text-[#7497d8];
 }
 
 .icon-only {
