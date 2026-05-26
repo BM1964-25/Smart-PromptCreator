@@ -1,5 +1,6 @@
-import { CheckCircle2, Copy, RotateCcw, Save, Settings2, Sparkles, Star, Tags, Trash2, Undo2 } from 'lucide-react';
+import { CheckCircle2, Copy, LoaderCircle, RotateCcw, Save, Settings2, Sparkles, Star, Tags, Trash2, Undo2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import { normalizeAnthropicModel, optimizeWithAnthropic, suggestPromptMetadataWithAnthropic } from '../services/anthropicService';
 import { buildVariantOptimizationPrompt, defaultOptimizerPreferences, optimizeLocally, optimizeVariantLocally } from '../services/optimizerService';
@@ -35,7 +36,7 @@ export function PromptEditor({
   const [optimizerPreferences, setOptimizerPreferences] = useState<OptimizerPreferences>(defaultOptimizerPreferences);
   const [busy, setBusy] = useState(false);
   const [variantBusy, setVariantBusy] = useState<PromptVariantTone | 'all'>();
-  const [metadataBusy, setMetadataBusy] = useState(false);
+  const [metadataBusy, setMetadataBusy] = useState<'derive' | 'regenerate'>();
   const promptDescription = prompt?.description || '';
   const contentStats = getTextStats(prompt?.content || '');
   const optimizedStats = getTextStats(prompt?.optimizedContent || '');
@@ -188,30 +189,41 @@ export function PromptEditor({
     toast.success('Optimierte Ausgabe als neue Eingabe übernommen');
   }
 
-  async function suggestMetadata() {
+  async function clearInputContent() {
+    if (!prompt) return;
+    if (!prompt.content.trim()) return;
+    const confirmed = window.confirm('Eingabe wirklich leeren?');
+    if (!confirmed) return;
+
+    await updatePrompt(prompt.id!, { content: '' });
+    toast.success('Eingabe geleert');
+  }
+
+  async function suggestMetadata(mode: 'derive' | 'regenerate') {
     if (!prompt) return;
     if (!prompt.content.trim()) {
       toast.error('Bitte zuerst einen Prompt eingeben.');
       return;
     }
 
-    setMetadataBusy(true);
+    setMetadataBusy(mode);
     try {
       const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
       if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
       const suggestion = await suggestPromptMetadataWithAnthropic(apiKey, prompt.content, prompt.optimizedContent, categories, anthropicModel);
       const category = await findOrCreateCategory(prompt.tabId, suggestion.categoryName);
+      const shouldRegenerate = mode === 'regenerate';
       await updatePrompt(prompt.id!, {
-        title: shouldReplaceGeneratedTitle(prompt.title) ? suggestion.title || prompt.title : prompt.title,
-        description: promptDescription.trim() ? promptDescription : suggestion.description || '',
-        categoryId: category.id,
-        tags: Array.from(new Set([...prompt.tags, ...suggestion.tags])).slice(0, 12)
+        title: shouldRegenerate || shouldReplaceGeneratedTitle(prompt.title) ? suggestion.title || prompt.title : prompt.title,
+        description: shouldRegenerate || !promptDescription.trim() ? suggestion.description || '' : promptDescription,
+        categoryId: shouldRegenerate || !prompt.categoryId ? category.id : prompt.categoryId,
+        tags: shouldRegenerate ? suggestion.tags.slice(0, 12) : Array.from(new Set([...prompt.tags, ...suggestion.tags])).slice(0, 12)
       });
-      toast.success('Titel, Beschreibung, Kategorie und Tags vorgeschlagen');
+      toast.success(shouldRegenerate ? 'Metadaten neu erzeugt' : 'Metadaten aus Prompt abgeleitet');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Metadaten-Vorschlag fehlgeschlagen');
     } finally {
-      setMetadataBusy(false);
+      setMetadataBusy(undefined);
     }
   }
 
@@ -269,10 +281,10 @@ export function PromptEditor({
       </header>
 
       <div className="grid min-h-0 grid-cols-2 overflow-hidden">
-        <section className="grid min-h-0 min-w-0 grid-rows-[minmax(560px,66%)_minmax(180px,34%)] border-r border-line dark:border-[#333]">
+        <section className="grid min-h-0 min-w-0 grid-rows-[minmax(500px,58%)_minmax(240px,42%)] border-r border-line dark:border-[#333]">
           <div className="min-h-0 overflow-y-auto border-b border-line p-3 dark:border-[#333]">
             <div className="grid gap-3">
-            <div className="rounded border border-line bg-white px-3 py-2 dark:border-[#333] dark:bg-[#181817]">
+            <div className="px-1 py-1">
               <input
                 value={prompt.title}
                 onChange={(event) => updatePrompt(prompt.id!, { title: event.target.value })}
@@ -280,7 +292,7 @@ export function PromptEditor({
               />
               <p className="text-xs text-neutral-500">Version {prompt.version} · lokal gespeichert</p>
             </div>
-            <div className="rounded border border-line bg-white px-3 py-4 dark:border-[#333] dark:bg-[#181817]">
+            <div className="border-y border-line px-1 py-3 dark:border-[#333]">
               <div className="relative grid grid-cols-4 gap-3">
                 <div className="absolute left-[12.5%] right-[12.5%] top-4 h-px bg-line dark:bg-[#333]" />
                 <WorkflowStep
@@ -376,10 +388,20 @@ export function PromptEditor({
               />
               Fehlende Informationen als Rückfragen ergänzen
             </label>
-            <div className="grid gap-3 rounded border border-line bg-white p-3 dark:border-[#333] dark:bg-[#181817]">
+            <div className="grid gap-3 border-t border-line pt-3 dark:border-[#333]">
               <div>
                 <h2 className="text-sm font-semibold">Metadaten</h2>
                 <p className="text-xs text-neutral-500">Titel, Beschreibung, Kategorie und Tags für die Bibliothek.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button className="icon-button ai-button h-10 justify-center whitespace-nowrap px-2" onClick={() => suggestMetadata('derive')} disabled={Boolean(metadataBusy)}>
+                  <AiActionIcon active={metadataBusy === 'derive'} fallback={<Tags size={16} />} />
+                  <span>{metadataBusy === 'derive' ? 'Analysiert...' : 'Metadaten aus Prompt ableiten'}</span>
+                </button>
+                <button className="icon-button ai-button h-10 justify-center whitespace-nowrap px-2" onClick={() => suggestMetadata('regenerate')} disabled={Boolean(metadataBusy)}>
+                  <AiActionIcon active={metadataBusy === 'regenerate'} fallback={<Tags size={16} />} />
+                  <span>{metadataBusy === 'regenerate' ? 'Erzeugt...' : 'Metadaten neu erzeugen'}</span>
+                </button>
               </div>
               <label className="grid gap-1 text-xs font-medium text-neutral-500">
                 Titel
@@ -399,11 +421,7 @@ export function PromptEditor({
                   placeholder="Kurze Beschreibung für die Prompt-Bibliothek"
                 />
               </label>
-              <div className="rounded border border-line bg-[#f9f8f3] p-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300">
-                Füllt leere Titel- und Beschreibungsfelder per KI. Kategorie wird vorgeschlagen, Tags werden ergänzt.
-              </div>
-              <div className="grid grid-cols-[1fr_auto] gap-2">
-                <div className="grid gap-2">
+              <div className="grid grid-cols-2 gap-2">
                   <label className="grid gap-1 text-xs font-medium text-neutral-500">
                     Arbeitsbereich
                     <select
@@ -445,10 +463,6 @@ export function PromptEditor({
                       ))}
                     </select>
                   </label>
-                </div>
-                <button className="icon-button ai-button self-end" onClick={suggestMetadata} disabled={metadataBusy}>
-                  <Tags size={16} /> {metadataBusy ? 'Analysiert...' : 'Titel & Metadaten'}
-                </button>
               </div>
 
               <label className="grid gap-1 text-xs font-medium text-neutral-500">
@@ -494,31 +508,44 @@ export function PromptEditor({
                 {contentStats.words} Wörter · {contentStats.characters} Zeichen
               </span>
             </div>
-            <textarea
-              value={prompt.content}
-              onChange={(event) => updatePrompt(prompt.id!, { content: event.target.value })}
-              className="min-h-0 flex-1 resize-none rounded border border-line bg-[#fffefa] p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:bg-white focus:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:text-[#f3f0e8] dark:focus:bg-[#151515]"
-              placeholder="Beschreibe hier, was die KI tun soll..."
-            />
+            <div className="relative min-h-0 flex-1">
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end p-3">
+                <button
+                  className="pointer-events-auto grid h-9 w-9 place-items-center rounded border border-[#cfc9bc] bg-white/90 text-neutral-500 shadow-sm transition hover:border-[#bdb5a6] hover:bg-white hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-100 dark:border-[#444] dark:bg-[#181817]/90 dark:text-neutral-400 dark:hover:text-neutral-200"
+                  title="Eingabe leeren"
+                  aria-label="Eingabe leeren"
+                  onClick={clearInputContent}
+                  disabled={!prompt.content.trim()}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+              <textarea
+                value={prompt.content}
+                onChange={(event) => updatePrompt(prompt.id!, { content: event.target.value })}
+                className="h-full min-h-0 w-full resize-none rounded border border-line bg-[#fffefa] p-5 pr-16 pt-16 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:bg-white focus:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:text-[#f3f0e8] dark:focus:bg-[#151515]"
+                placeholder="Beschreibe hier, was die KI tun soll..."
+              />
+            </div>
           </div>
         </section>
 
-        <section className="grid min-h-0 min-w-0 grid-rows-[minmax(560px,66%)_minmax(180px,34%)]">
-          <div className="min-h-0 overflow-y-auto border-b border-line p-3 dark:border-[#333]">
+        <section className="grid min-h-0 min-w-0 grid-rows-[minmax(500px,58%)_minmax(240px,42%)]">
+          <div className="min-h-0 overflow-y-auto border-b border-line p-3 pr-5 dark:border-[#333]">
             <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2">
               <div className="grid gap-2">
                 <div className="flex items-start justify-between gap-3">
                   <button className="icon-button" onClick={() => setShowExpertOptions((current) => !current)}>
                     <Settings2 size={16} /> Expertenmodus
                   </button>
-                  <div className="mr-[13px] grid w-36 shrink-0 gap-2">
+                  <div className="grid w-52 shrink-0 justify-self-end gap-2">
                     <button className="icon-button ai-button w-full justify-center" onClick={optimize} disabled={busy}>
-                      <Sparkles size={16} /> {busy ? 'Optimiert...' : 'Optimieren'}
+                      <AiActionIcon active={busy} fallback={<Sparkles size={16} />} /> {busy ? 'Optimiert...' : 'Für Ausgabe optimieren'}
                     </button>
                   </div>
                 </div>
                 {showExpertOptions && (
-                  <div className="grid gap-3 rounded border border-line bg-white p-3 dark:border-[#3a3a38] dark:bg-[#181817]">
+                  <div className="grid gap-3 border-t border-line pt-3 dark:border-[#333]">
                     <label className="grid gap-1 text-xs font-medium text-neutral-500">
                       Anbieter
                       <select className="field" value={provider} onChange={(event) => setProvider(event.target.value as AiProvider)}>
@@ -526,7 +553,7 @@ export function PromptEditor({
                         <option value="local">Lokal</option>
                       </select>
                     </label>
-                    <div className="rounded border border-line bg-[#f9f8f3] p-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#151515] dark:text-neutral-300">
+                    <div className="text-xs leading-5 text-neutral-600 dark:text-neutral-300">
                       {provider === 'anthropic'
                         ? 'Anthropic nutzt deinen gespeicherten API-Schlüssel, sendet den Prompt an Claude und erzeugt eine KI-optimierte Version. Dafür ist eine aktive Verbindung erforderlich.'
                         : 'Lokal verarbeitet den Prompt nur im Browser mit einer eingebauten Vorlage. Es werden keine Inhalte an Anthropic gesendet, die Optimierung ist dafür regelbasiert und weniger kreativ.'}
@@ -534,22 +561,27 @@ export function PromptEditor({
                   </div>
                 )}
               </div>
-            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3 rounded border border-line bg-white p-3 dark:border-[#3a3a38] dark:bg-[#181817]">
+            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3 border-t border-line pt-3 dark:border-[#333]">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-sm font-semibold">Variantenvergleich</h2>
                   <p className="text-xs text-neutral-500">Kompakte und Premium-Struktur vergleichen, übernehmen und weiter verbessern.</p>
                 </div>
-                <button className="icon-button ai-button w-36 shrink-0 justify-center" onClick={generateVariants} disabled={Boolean(variantBusy)}>
-                  <Sparkles size={16} /> {variantBusy === 'all' ? 'Erstellt...' : '2 Varianten'}
+                <button className="icon-button ai-button w-52 shrink-0 justify-center" onClick={generateVariants} disabled={Boolean(variantBusy)}>
+                  <AiActionIcon active={variantBusy === 'all'} fallback={<Sparkles size={16} />} /> {variantBusy === 'all' ? 'Erstellt...' : '2 Varianten'}
                 </button>
               </div>
-              <div className="grid min-h-0 gap-2 xl:grid-cols-2">
-                {variants.map((variant) => {
+              <div className="grid min-h-0 gap-3 xl:grid-cols-2">
+                {variants.map((variant, index) => {
                   const stats = getTextStats(variant.content);
                   const isBusy = variantBusy === variant.tone;
                   return (
-                    <article key={variant.tone} className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 rounded border border-line bg-[#f9f8f3] p-3 dark:border-[#333] dark:bg-[#151515]">
+                    <article
+                      key={variant.tone}
+                      className={`grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 ${
+                        index === 0 ? 'xl:border-r xl:border-line xl:pr-3 dark:xl:border-[#333]' : ''
+                      }`}
+                    >
                       <div>
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="text-sm font-semibold">{variant.title}</h3>
@@ -558,7 +590,7 @@ export function PromptEditor({
                           </span>
                         </div>
                         <p className="mt-1 text-xs leading-5 text-neutral-500">{variant.description}</p>
-                        <p className="mt-2 rounded border border-line bg-white px-2 py-1.5 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:bg-[#111] dark:text-neutral-300">
+                        <p className="mt-2 text-xs leading-5 text-neutral-600 dark:text-neutral-300">
                           <span className="font-semibold">Ziel:</span> {variant.goal}
                         </p>
                       </div>
@@ -579,7 +611,7 @@ export function PromptEditor({
                           <CheckCircle2 size={16} /> Übernehmen
                         </button>
                         <button className="icon-button ai-button justify-center" onClick={() => improveVariant(variant)} disabled={Boolean(variantBusy) || !variant.content.trim()}>
-                          <Sparkles size={16} /> {isBusy ? 'Verbessert...' : 'Verbessern'}
+                          <AiActionIcon active={isBusy} fallback={<Sparkles size={16} />} /> {isBusy ? 'Verbessert...' : 'Verbessern'}
                         </button>
                       </div>
                     </article>
@@ -589,7 +621,7 @@ export function PromptEditor({
             </div>
           </div>
           </div>
-          <div className="flex min-h-0 flex-col bg-[#faf8f1] p-4 dark:bg-[#171716]">
+          <div className="flex min-h-0 flex-col bg-[#faf8f1] p-4 pr-6 dark:bg-[#171716]">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold">Optimierte Ausgabe</h2>
@@ -599,25 +631,44 @@ export function PromptEditor({
                 <span className="rounded bg-[#e3f1ed] px-2 py-1 text-xs text-brand dark:bg-[#123a34]">
                   {optimizedStats.words} Wörter · {optimizedStats.characters} Zeichen
                 </span>
+              </div>
+            </div>
+            <div className="relative min-h-44 flex-1 rounded border border-line bg-white transition focus-within:border-brand focus-within:shadow-soft dark:border-[#333] dark:bg-[#111]">
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end p-3">
                 <button
-                  className="icon-button h-9 justify-center px-2.5 text-xs"
-                  title="Optimierte Ausgabe als neue Eingabe übernehmen"
-                  onClick={continueWithOptimizedContent}
+                  className="pointer-events-auto grid h-9 w-9 place-items-center rounded border border-[#cfc9bc] bg-white/90 text-neutral-500 shadow-sm transition hover:border-[#bdb5a6] hover:bg-white hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-100 dark:border-[#444] dark:bg-[#181817]/90 dark:text-neutral-400 dark:hover:text-neutral-200"
+                  title="Optimierte Version kopieren"
+                  aria-label="Optimierte Version kopieren"
+                  onClick={copyOptimizedContent}
                   disabled={!prompt.optimizedContent.trim()}
                 >
-                  <RotateCcw size={15} /> Weiter verbessern
-                </button>
-                <button className="icon-only" title="Optimierte Version kopieren" onClick={copyOptimizedContent} disabled={!prompt.optimizedContent.trim()}>
                   <Copy size={16} />
                 </button>
               </div>
+              <textarea
+                value={prompt.optimizedContent}
+                onChange={(event) => updatePrompt(prompt.id!, { optimizedContent: event.target.value })}
+                className="h-full min-h-44 w-full resize-none rounded bg-transparent p-5 pr-16 pt-16 text-[15px] leading-8 text-ink outline-none placeholder:text-neutral-400 dark:text-[#f3f0e8]"
+                placeholder="Hier erscheint die optimierte Version..."
+              />
             </div>
-            <textarea
-              value={prompt.optimizedContent}
-              onChange={(event) => updatePrompt(prompt.id!, { optimizedContent: event.target.value })}
-              className="min-h-44 flex-1 resize-none rounded border border-line bg-white p-5 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:shadow-soft dark:border-[#333] dark:bg-[#111] dark:text-[#f3f0e8]"
-              placeholder="Hier erscheint die optimierte Version..."
-            />
+            <div className="mt-3 flex items-start justify-between gap-3 border-t border-line pt-3 text-xs leading-5 text-neutral-600 dark:border-[#333] dark:text-neutral-300">
+              <div className="min-w-0">
+                <p className="font-semibold text-neutral-800 dark:text-neutral-100">Weiter verbessern</p>
+                <p className="mt-1">
+                  Übernimmt die Ausgabe als neue Eingabe. Nutze das erst nach dem Prüfen der Ausgabe und mit einem klaren Ziel,
+                  zum Beispiel kürzer, präziser oder stärker strukturiert.
+                </p>
+              </div>
+              <button
+                className="icon-button h-9 shrink-0 justify-center px-2.5 text-xs"
+                title="Optimierte Ausgabe als neue Eingabe übernehmen"
+                onClick={continueWithOptimizedContent}
+                disabled={!prompt.optimizedContent.trim()}
+              >
+                <RotateCcw size={15} /> Weiter verbessern
+              </button>
+            </div>
           </div>
         </section>
       </div>
@@ -631,6 +682,10 @@ function getTextStats(value: string) {
     characters: value.length,
     words: trimmed ? trimmed.split(/\s+/).length : 0
   };
+}
+
+function AiActionIcon({ active, fallback }: { active: boolean; fallback: ReactNode }) {
+  return active ? <LoaderCircle className="animate-spin" size={16} /> : fallback;
 }
 
 const variantPresets: Array<Pick<PromptVariant, 'tone' | 'title' | 'goal' | 'description'>> = [

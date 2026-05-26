@@ -166,7 +166,8 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
 
             <HelpSection icon={<Sparkles size={18} />} title="Die wichtigsten KI-Buttons">
               <ul>
-                <li><strong>Titel & Metadaten:</strong> Analysiert Eingabe und optimierte Ausgabe und schlägt Titel, Beschreibung, Kategorie und Tags vor.</li>
+                <li><strong>Metadaten aus Prompt ableiten:</strong> Analysiert Eingabe und optimierte Ausgabe, füllt leere Metadaten sinnvoll und ergänzt Tags, ohne bewusst gepflegte Angaben zu überschreiben.</li>
+                <li><strong>Metadaten neu erzeugen:</strong> Erzeugt Titel, Beschreibung, Kategorie und Tags vollständig neu. Diese Funktion ist sinnvoll, wenn aus einer Kopie ein neuer Prompt geworden ist.</li>
                 <li><strong>Optimieren:</strong> Erstellt aus der Eingabe einen verbesserten Zielprompt und schreibt ihn in „Optimierte Ausgabe“.</li>
                 <li><strong>2 Varianten:</strong> Erstellt eine kompakte und eine Premium-Variante zum direkten Vergleich.</li>
                 <li><strong>Verbessern bei Kompakt:</strong> Überarbeitet nur die kompakte Variante, wenn sie noch präziser oder kürzer werden soll.</li>
@@ -175,7 +176,7 @@ export function HelpPanel({ onClose }: HelpPanelProps) {
               </ul>
               <p>
                 Alle blau hervorgehobenen Buttons lösen eine KI- oder Optimierungsfunktion aus. Je nach Anbieter-Einstellung läuft dies
-                über Anthropic oder lokal regelbasiert. „Titel & Metadaten“ nutzt Anthropic, weil Kategorie- und Tag-Vorschläge semantisch
+                über Anthropic oder lokal regelbasiert. Die Metadaten-Buttons nutzen Anthropic, weil Kategorie- und Tag-Vorschläge semantisch
                 aus dem Prompt abgeleitet werden.
               </p>
             </HelpSection>
