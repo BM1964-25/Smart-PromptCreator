@@ -31,11 +31,12 @@ export function PromptList({
   onToggleCollapsed
 }: PromptListProps) {
   const filterActive = Boolean(activeCategory || favoriteOnly || search.trim());
+  const collapseButtonClass = 'icon-only !border-0 !bg-transparent !shadow-none hover:!bg-transparent dark:!bg-transparent';
 
   if (collapsed) {
     return (
       <div className="flex min-w-0 flex-col items-center border-r border-line bg-[#f9f8f3] py-3 dark:border-[#333] dark:bg-[#1c1c1b]">
-        <button className="icon-only" title="Prompt-Bibliothek ausklappen" onClick={onToggleCollapsed}>
+        <button className={collapseButtonClass} title="Prompt-Bibliothek ausklappen" onClick={onToggleCollapsed}>
           <PanelLeftOpen size={16} />
         </button>
         <div className="mt-4 grid justify-items-center gap-3 text-neutral-500">
@@ -59,7 +60,7 @@ export function PromptList({
               {favoriteOnly ? ' · Favoriten' : ''}
             </p>
           </div>
-          <button className="icon-only shrink-0" title="Prompt-Bibliothek einklappen" onClick={onToggleCollapsed}>
+          <button className={`${collapseButtonClass} shrink-0`} title="Prompt-Bibliothek einklappen" onClick={onToggleCollapsed}>
             <PanelLeftClose size={16} />
           </button>
         </div>
