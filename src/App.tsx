@@ -255,32 +255,39 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#ebe8df] text-ink dark:bg-[#171717] dark:text-[#f3f0e8]">
+      <header className="flex shrink-0 items-center justify-between gap-6 border-b border-line bg-panel px-5 py-4 dark:border-[#333] dark:bg-[#20201f]">
+        <div className="flex min-w-0 items-center gap-4">
+          <img
+            src="/smart-promptcreator-icon.png"
+            alt=""
+            aria-hidden="true"
+            className="h-12 w-12 shrink-0 rounded object-cover shadow-sm"
+            draggable={false}
+          />
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">SMARTBUILT-AI</p>
+            <h1 className="truncate text-2xl font-semibold tracking-normal">SMART PromptCreator</h1>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">Lokale Prompt-Werkstatt für bessere KI-Ergebnisse.</p>
+          </div>
+        </div>
+        <div className="hidden shrink-0 items-center gap-2 lg:flex">
+          <span className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 dark:border-[#3a3a38] dark:bg-[#151515] dark:text-neutral-300">
+            Browser-Speicher aktiv
+          </span>
+          <span className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 dark:border-[#3a3a38] dark:bg-[#151515] dark:text-neutral-300">
+            {anthropicReady ? 'API-Key gespeichert' : 'API-Key fehlt'}
+          </span>
+          <button className="icon-button" onClick={createPromptInActiveWorkspace}>
+            <Plus size={16} /> Prompt erstellen
+          </button>
+        </div>
+      </header>
       <main className="flex min-h-0 flex-1 overflow-hidden">
       <aside
         className={`relative flex shrink-0 flex-col border-r border-line bg-panel transition-[width] duration-200 dark:border-[#333] dark:bg-[#20201f] ${
           sidebarCollapsed ? 'w-20' : 'w-80'
         }`}
       >
-        <div className="flex min-h-[68px] items-center border-b border-line px-4 py-3 dark:border-[#333]">
-          <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <img
-              src="/smart-promptcreator-icon.png"
-              alt="SMART PromptCreator"
-              className="h-9 w-9 rounded object-cover"
-              draggable={false}
-            />
-            {!sidebarCollapsed && (
-            <div className="min-w-0 flex-1">
-              <h1 className="whitespace-nowrap text-[22px] font-semibold tracking-normal">SMART PromptCreator</h1>
-              <p className="text-xs leading-4 text-neutral-500 dark:text-neutral-400">
-                Lokale Prompt-Werkstatt für
-                <span className="block">bessere KI-Ergebnisse</span>
-              </p>
-            </div>
-            )}
-          </div>
-        </div>
-
         <div className="border-b border-line p-3 dark:border-[#333]">
           {!sidebarCollapsed && (
           <div className="relative">
