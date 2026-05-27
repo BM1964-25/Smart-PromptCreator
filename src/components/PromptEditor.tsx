@@ -1,5 +1,5 @@
 import { CheckCircle2, Copy, LoaderCircle, RotateCcw, Save, Settings2, Sparkles, Star, Tags, Trash2, Undo2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import { normalizeAnthropicModel, optimizeWithAnthropic, suggestPromptMetadataWithAnthropic } from '../services/anthropicService';
@@ -37,8 +37,14 @@ export function PromptEditor({
   const [busy, setBusy] = useState(false);
   const [variantBusy, setVariantBusy] = useState<PromptVariantTone | 'all'>();
   const [metadataBusy, setMetadataBusy] = useState<'derive' | 'regenerate'>();
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [contentDraft, setContentDraft] = useState(prompt?.content || '');
+  const saveStatusTimer = useRef<number | undefined>(undefined);
+  const saveSequence = useRef(0);
+  const contentSaveTimer = useRef<number | undefined>(undefined);
+  const contentDraftPromptId = useRef<string | undefined>(prompt?.id);
   const promptDescription = prompt?.description || '';
-  const contentStats = getTextStats(prompt?.content || '');
+  const contentStats = getTextStats(contentDraft);
   const optimizedStats = getTextStats(prompt?.optimizedContent || '');
   const variants = getPromptVariants(prompt);
   const anthropicModel = normalizeAnthropicModel(settings?.anthropicModel);
@@ -48,6 +54,20 @@ export function PromptEditor({
     [categories, promptWorkspaceId]
   );
   const promptCategoryId = promptWorkspaceCategories.some((category) => category.id === prompt?.categoryId) ? prompt?.categoryId || '' : '';
+
+  useEffect(() => {
+    const nextContent = prompt?.content || '';
+    if (contentDraftPromptId.current !== prompt?.id) {
+      contentDraftPromptId.current = prompt?.id;
+      window.clearTimeout(contentSaveTimer.current);
+      setContentDraft(nextContent);
+      return;
+    }
+
+    if (saveStatus === 'idle' && contentDraft !== nextContent) {
+      setContentDraft(nextContent);
+    }
+  }, [contentDraft, prompt?.content, prompt?.id, saveStatus]);
 
   if (!prompt) {
     return (
@@ -68,6 +88,48 @@ export function PromptEditor({
     );
   }
 
+  async function savePromptChanges(changes: Partial<Prompt>) {
+    if (!prompt?.id) return;
+    const sequence = ++saveSequence.current;
+    if (changes.content !== undefined) window.clearTimeout(contentSaveTimer.current);
+    window.clearTimeout(saveStatusTimer.current);
+    setSaveStatus('saving');
+
+    try {
+      await Promise.all([updatePrompt(prompt.id, changes), waitForSaveIndicator()]);
+      if (saveSequence.current !== sequence) return;
+      setSaveStatus('saved');
+      saveStatusTimer.current = window.setTimeout(() => {
+        if (saveSequence.current === sequence) setSaveStatus('idle');
+      }, 1300);
+    } catch (error) {
+      if (saveSequence.current === sequence) setSaveStatus('idle');
+      throw error;
+    }
+  }
+
+  function scheduleContentSave(value: string) {
+    if (!prompt?.id) return;
+    setContentDraft(value);
+    const sequence = ++saveSequence.current;
+    window.clearTimeout(contentSaveTimer.current);
+    window.clearTimeout(saveStatusTimer.current);
+    setSaveStatus('saving');
+
+    contentSaveTimer.current = window.setTimeout(async () => {
+      try {
+        await Promise.all([updatePrompt(prompt.id!, { content: value }), waitForSaveIndicator()]);
+        if (saveSequence.current !== sequence) return;
+        setSaveStatus('saved');
+        saveStatusTimer.current = window.setTimeout(() => {
+          if (saveSequence.current === sequence) setSaveStatus('idle');
+        }, 1300);
+      } catch {
+        if (saveSequence.current === sequence) setSaveStatus('idle');
+      }
+    }, 700);
+  }
+
   async function optimize() {
     if (!prompt) return;
     setBusy(true);
@@ -76,11 +138,11 @@ export function PromptEditor({
       if (provider === 'anthropic') {
         const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
         if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
-        optimized = await optimizeWithAnthropic(apiKey, prompt.content, optimizerPreferences, anthropicModel);
+        optimized = await optimizeWithAnthropic(apiKey, contentDraft, optimizerPreferences, anthropicModel);
       } else {
-        optimized = optimizeLocally(prompt.content, optimizerPreferences);
+        optimized = optimizeLocally(contentDraft, optimizerPreferences);
       }
-      await updatePrompt(prompt.id!, { optimizedContent: optimized });
+      await savePromptChanges({ optimizedContent: optimized });
       toast.success('Prompt optimiert');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Optimierung fehlgeschlagen');
@@ -101,7 +163,7 @@ export function PromptEditor({
 
   async function generateVariants() {
     if (!prompt) return;
-    if (!prompt.content.trim()) {
+    if (!contentDraft.trim()) {
       toast.error('Bitte zuerst einen Prompt eingeben.');
       return;
     }
@@ -110,7 +172,7 @@ export function PromptEditor({
     try {
       const nextVariants: PromptVariant[] = [];
       for (const preset of variantPresets) {
-        const content = await optimizeContent(prompt.content, createVariantPreferences(optimizerPreferences, preset.tone), preset.tone);
+        const content = await optimizeContent(contentDraft, createVariantPreferences(optimizerPreferences, preset.tone), preset.tone);
         nextVariants.push({
           id: preset.tone,
           tone: preset.tone,
@@ -121,7 +183,7 @@ export function PromptEditor({
           updatedAt: new Date().toISOString()
         });
       }
-      await updatePrompt(prompt.id!, {
+      await savePromptChanges({
         variants: nextVariants,
         optimizedContent: nextVariants.find((variant) => variant.tone === 'premium')?.content || nextVariants[0]?.content || prompt.optimizedContent
       });
@@ -137,7 +199,7 @@ export function PromptEditor({
     if (!prompt) return;
     setVariantBusy(variant.tone);
     try {
-      const improved = await optimizeContent(variant.content || prompt.content, createVariantPreferences(optimizerPreferences, variant.tone), variant.tone);
+      const improved = await optimizeContent(variant.content || contentDraft, createVariantPreferences(optimizerPreferences, variant.tone), variant.tone);
       const nextVariants = variants.map((item) =>
         item.tone === variant.tone
           ? {
@@ -147,7 +209,7 @@ export function PromptEditor({
             }
           : item
       );
-      await updatePrompt(prompt.id!, { variants: nextVariants });
+      await savePromptChanges({ variants: nextVariants });
       toast.success(`${variant.title} verbessert`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Variante konnte nicht verbessert werden');
@@ -159,7 +221,7 @@ export function PromptEditor({
   async function useVariant(variant: PromptVariant) {
     if (!prompt) return;
     if (!variant.content.trim()) return;
-    await updatePrompt(prompt.id!, { optimizedContent: variant.content });
+    await savePromptChanges({ optimizedContent: variant.content });
     toast.success(`${variant.title} übernommen`);
   }
 
@@ -181,27 +243,29 @@ export function PromptEditor({
       return;
     }
 
-    await updatePrompt(prompt.id!, {
+    await savePromptChanges({
       content: prompt.optimizedContent,
       optimizedContent: '',
       variants: []
     });
+    setContentDraft(prompt.optimizedContent);
     toast.success('Optimierte Ausgabe als neue Eingabe übernommen');
   }
 
   async function clearInputContent() {
     if (!prompt) return;
-    if (!prompt.content.trim()) return;
+    if (!contentDraft.trim()) return;
     const confirmed = window.confirm('Eingabe wirklich leeren?');
     if (!confirmed) return;
 
-    await updatePrompt(prompt.id!, { content: '' });
+    await savePromptChanges({ content: '' });
+    setContentDraft('');
     toast.success('Eingabe geleert');
   }
 
   async function suggestMetadata(mode: 'derive' | 'regenerate') {
     if (!prompt) return;
-    if (!prompt.content.trim()) {
+    if (!contentDraft.trim()) {
       toast.error('Bitte zuerst einen Prompt eingeben.');
       return;
     }
@@ -210,10 +274,10 @@ export function PromptEditor({
     try {
       const apiKey = await decryptSecret(settings?.apiKeys.anthropic);
       if (!apiKey) throw new Error('Anthropic API-Key fehlt.');
-      const suggestion = await suggestPromptMetadataWithAnthropic(apiKey, prompt.content, prompt.optimizedContent, categories, anthropicModel);
+      const suggestion = await suggestPromptMetadataWithAnthropic(apiKey, contentDraft, prompt.optimizedContent, categories, anthropicModel);
       const category = await findOrCreateCategory(prompt.tabId, suggestion.categoryName);
       const shouldRegenerate = mode === 'regenerate';
-      await updatePrompt(prompt.id!, {
+      await savePromptChanges({
         title: shouldRegenerate || shouldReplaceGeneratedTitle(prompt.title) ? suggestion.title || prompt.title : prompt.title,
         description: shouldRegenerate || !promptDescription.trim() ? suggestion.description || '' : promptDescription,
         categoryId: shouldRegenerate || !prompt.categoryId ? category.id : prompt.categoryId,
@@ -229,12 +293,15 @@ export function PromptEditor({
 
   async function removeTag(tagToRemove: string) {
     if (!prompt) return;
-    await updatePrompt(prompt.id!, { tags: prompt.tags.filter((tag) => tag !== tagToRemove) });
+    await savePromptChanges({ tags: prompt.tags.filter((tag) => tag !== tagToRemove) });
   }
 
   async function duplicateCurrentPrompt() {
     if (!prompt) return;
-    const copy = await duplicatePrompt(prompt);
+    if (contentDraft !== prompt.content) {
+      await savePromptChanges({ content: contentDraft });
+    }
+    const copy = await duplicatePrompt({ ...prompt, content: contentDraft });
     onFocusPromptLocation?.(copy.tabId, copy.categoryId || undefined, copy.id!);
     toast.success('Prompt dupliziert');
   }
@@ -249,6 +316,11 @@ export function PromptEditor({
     }
   }
 
+  async function confirmManualSave() {
+    if (!prompt?.id) return;
+    await savePromptChanges(contentDraft !== prompt.content ? { content: contentDraft } : {});
+  }
+
   return (
     <div className="grid min-w-0 grid-rows-[auto_minmax(0,1fr)] bg-[#fdfcf8] dark:bg-[#151515]">
       <header className="flex min-h-[68px] items-center justify-between border-b border-line px-5 py-3 dark:border-[#333]">
@@ -257,25 +329,25 @@ export function PromptEditor({
           <p className="text-xs text-neutral-500">Prompt bearbeiten · Varianten vergleichen · Ausgabe übernehmen</p>
         </div>
         <div className="flex flex-wrap justify-end gap-2">
+          <button className={`toolbar-action ${saveStatus === 'saving' ? 'save-pending' : ''} ${saveStatus === 'saved' ? 'save-confirmed' : ''}`} aria-label="Speichern" onClick={confirmManualSave}>
+            <span>Speichern</span>
+            {saveStatus === 'saved' ? <CheckCircle2 size={15} /> : <Save size={15} />}
+          </button>
+          <button className="toolbar-action" aria-label="Favorit" onClick={() => savePromptChanges({ favorite: !prompt.favorite })}>
+            <span>Favorit</span>
+            <Star size={15} className={prompt.favorite ? 'fill-amber text-amber' : ''} />
+          </button>
           <button className="toolbar-action" aria-label="Rückgängig" onClick={undoLastChange} disabled={!prompt.history.length}>
             <span>Rückgängig</span>
-            <Undo2 size={17} />
-          </button>
-          <button className="toolbar-action" aria-label="Favorit" onClick={() => updatePrompt(prompt.id!, { favorite: !prompt.favorite })}>
-            <span>Favorit</span>
-            <Star size={17} className={prompt.favorite ? 'fill-amber text-amber' : ''} />
+            <Undo2 size={15} />
           </button>
           <button className="toolbar-action" aria-label="Duplizieren" onClick={duplicateCurrentPrompt}>
             <span>Duplizieren</span>
-            <Copy size={17} />
-          </button>
-          <button className="toolbar-action" aria-label="Speichern">
-            <span>Speichern</span>
-            <Save size={17} />
+            <Copy size={15} />
           </button>
           <button className="toolbar-action" aria-label="Löschen" onClick={() => onDelete(prompt)}>
             <span>Löschen</span>
-            <Trash2 size={17} />
+            <Trash2 size={15} />
           </button>
         </div>
       </header>
@@ -287,7 +359,7 @@ export function PromptEditor({
             <div className="px-1 py-1">
               <input
                 value={prompt.title}
-                onChange={(event) => updatePrompt(prompt.id!, { title: event.target.value })}
+                onChange={(event) => savePromptChanges({ title: event.target.value })}
                 className="w-full bg-transparent text-base font-semibold outline-none"
               />
               <p className="text-xs text-neutral-500">Version {prompt.version} · lokal gespeichert</p>
@@ -298,12 +370,12 @@ export function PromptEditor({
                 <WorkflowStep
                   number="01"
                   title="Prompt-Ziel klären"
-                  active={Boolean(prompt.content.trim())}
+                  active={Boolean(contentDraft.trim())}
                 />
                 <WorkflowStep
                   number="02"
                   title="Masterstruktur aufbauen"
-                  active={Boolean(prompt.content.trim() && prompt.categoryId)}
+                  active={Boolean(contentDraft.trim() && prompt.categoryId)}
                 />
                 <WorkflowStep
                   number="03"
@@ -394,12 +466,12 @@ export function PromptEditor({
                 <p className="text-xs text-neutral-500">Titel, Beschreibung, Kategorie und Tags für die Bibliothek.</p>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <button className="icon-button ai-button h-10 justify-center whitespace-nowrap px-2" onClick={() => suggestMetadata('derive')} disabled={Boolean(metadataBusy)}>
-                  <AiActionIcon active={metadataBusy === 'derive'} fallback={<Tags size={16} />} />
+                <button className="icon-button ai-button h-9 justify-center whitespace-nowrap px-2 text-[11px]" onClick={() => suggestMetadata('derive')} disabled={Boolean(metadataBusy)}>
+                  <AiActionIcon active={metadataBusy === 'derive'} fallback={<Tags size={15} />} />
                   <span>{metadataBusy === 'derive' ? 'Analysiert...' : 'Metadaten aus Prompt ableiten'}</span>
                 </button>
-                <button className="icon-button ai-button h-10 justify-center whitespace-nowrap px-2" onClick={() => suggestMetadata('regenerate')} disabled={Boolean(metadataBusy)}>
-                  <AiActionIcon active={metadataBusy === 'regenerate'} fallback={<Tags size={16} />} />
+                <button className="icon-button ai-button h-9 justify-center whitespace-nowrap px-2 text-[11px]" onClick={() => suggestMetadata('regenerate')} disabled={Boolean(metadataBusy)}>
+                  <AiActionIcon active={metadataBusy === 'regenerate'} fallback={<Tags size={15} />} />
                   <span>{metadataBusy === 'regenerate' ? 'Erzeugt...' : 'Metadaten neu erzeugen'}</span>
                 </button>
               </div>
@@ -408,7 +480,7 @@ export function PromptEditor({
                 <input
                   className="field"
                   value={prompt.title}
-                  onChange={(event) => updatePrompt(prompt.id!, { title: event.target.value })}
+                  onChange={(event) => savePromptChanges({ title: event.target.value })}
                   placeholder="Kurzer, klarer Titel"
                 />
               </label>
@@ -417,7 +489,7 @@ export function PromptEditor({
                 <textarea
                   className="field min-h-20 resize-y leading-6"
                   value={promptDescription}
-                  onChange={(event) => updatePrompt(prompt.id!, { description: event.target.value })}
+                  onChange={(event) => savePromptChanges({ description: event.target.value })}
                   placeholder="Kurze Beschreibung für die Prompt-Bibliothek"
                 />
               </label>
@@ -431,7 +503,7 @@ export function PromptEditor({
                         const nextTabId = event.target.value;
                         const categoryStillFits = categories.some((category) => category.id === prompt.categoryId && category.tabId === nextTabId);
                         const nextCategoryId = categoryStillFits ? prompt.categoryId : '';
-                        await updatePrompt(prompt.id!, { tabId: nextTabId, categoryId: nextCategoryId });
+                        await savePromptChanges({ tabId: nextTabId, categoryId: nextCategoryId });
                         onFocusPromptLocation?.(nextTabId, nextCategoryId || undefined, prompt.id!);
                         toast.success('Prompt verschoben');
                       }}
@@ -451,7 +523,7 @@ export function PromptEditor({
                       onChange={async (event) => {
                         const category = categories.find((item) => item.id === event.target.value);
                         const nextTabId = category?.tabId || promptWorkspaceId;
-                        await updatePrompt(prompt.id!, { categoryId: event.target.value, tabId: nextTabId });
+                        await savePromptChanges({ categoryId: event.target.value, tabId: nextTabId });
                         onFocusPromptLocation?.(nextTabId, event.target.value || undefined, prompt.id!);
                       }}
                     >
@@ -471,7 +543,7 @@ export function PromptEditor({
                   className="field"
                   value={prompt.tags.join(', ')}
                   onChange={(event) =>
-                    updatePrompt(prompt.id!, {
+                    savePromptChanges({
                       tags: event.target.value
                         .split(',')
                         .map((tag) => tag.trim().replace(/^#/, '').toLowerCase())
@@ -515,14 +587,14 @@ export function PromptEditor({
                   title="Eingabe leeren"
                   aria-label="Eingabe leeren"
                   onClick={clearInputContent}
-                  disabled={!prompt.content.trim()}
+                  disabled={!contentDraft.trim()}
                 >
                   <Trash2 size={16} />
                 </button>
               </div>
               <textarea
-                value={prompt.content}
-                onChange={(event) => updatePrompt(prompt.id!, { content: event.target.value })}
+                value={contentDraft}
+                onChange={(event) => scheduleContentSave(event.target.value)}
                 className="h-full min-h-0 w-full resize-none rounded border border-line bg-[#fffefa] p-5 pr-16 pt-16 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:bg-white focus:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:text-[#f3f0e8] dark:focus:bg-[#151515]"
                 placeholder="Beschreibe hier, was die KI tun soll..."
               />
@@ -538,7 +610,7 @@ export function PromptEditor({
                   <button className="icon-button" onClick={() => setShowExpertOptions((current) => !current)}>
                     <Settings2 size={16} /> Expertenmodus
                   </button>
-                  <div className="grid w-52 shrink-0 justify-self-end gap-2">
+                  <div className="grid w-48 shrink-0 justify-self-end gap-2">
                     <button className="icon-button ai-button w-full justify-center" onClick={optimize} disabled={busy}>
                       <AiActionIcon active={busy} fallback={<Sparkles size={16} />} /> {busy ? 'Optimiert...' : 'Für Ausgabe optimieren'}
                     </button>
@@ -567,7 +639,7 @@ export function PromptEditor({
                   <h2 className="text-sm font-semibold">Variantenvergleich</h2>
                   <p className="text-xs text-neutral-500">Kompakte und Premium-Struktur vergleichen, übernehmen und weiter verbessern.</p>
                 </div>
-                <button className="icon-button ai-button w-52 shrink-0 justify-center" onClick={generateVariants} disabled={Boolean(variantBusy)}>
+                <button className="icon-button ai-button w-48 shrink-0 justify-center" onClick={generateVariants} disabled={Boolean(variantBusy)}>
                   <AiActionIcon active={variantBusy === 'all'} fallback={<Sparkles size={16} />} /> {variantBusy === 'all' ? 'Erstellt...' : '2 Varianten'}
                 </button>
               </div>
@@ -598,7 +670,7 @@ export function PromptEditor({
                         className="min-h-0 resize-none rounded border border-line bg-white p-3 text-xs leading-5 outline-none focus:border-brand dark:border-[#333] dark:bg-[#111]"
                         value={variant.content}
                         onChange={(event) =>
-                          updatePrompt(prompt.id!, {
+                          savePromptChanges({
                             variants: variants.map((item) =>
                               item.tone === variant.tone ? { ...item, content: event.target.value, updatedAt: new Date().toISOString() } : item
                             )
@@ -647,7 +719,7 @@ export function PromptEditor({
               </div>
               <textarea
                 value={prompt.optimizedContent}
-                onChange={(event) => updatePrompt(prompt.id!, { optimizedContent: event.target.value })}
+                onChange={(event) => savePromptChanges({ optimizedContent: event.target.value })}
                 className="h-full min-h-44 w-full resize-none rounded bg-transparent p-5 pr-16 pt-16 text-[15px] leading-8 text-ink outline-none placeholder:text-neutral-400 dark:text-[#f3f0e8]"
                 placeholder="Hier erscheint die optimierte Version..."
               />
@@ -682,6 +754,10 @@ function getTextStats(value: string) {
     characters: value.length,
     words: trimmed ? trimmed.split(/\s+/).length : 0
   };
+}
+
+function waitForSaveIndicator() {
+  return new Promise((resolve) => window.setTimeout(resolve, 450));
 }
 
 function AiActionIcon({ active, fallback }: { active: boolean; fallback: ReactNode }) {
