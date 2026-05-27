@@ -477,16 +477,16 @@ export default function App() {
 
 function AppFooter() {
   return (
-    <footer className="grid shrink-0 grid-cols-2 gap-4 border-t border-line bg-panel px-5 py-3 text-[11px] leading-5 text-neutral-500 dark:border-[#333] dark:bg-[#20201f] dark:text-neutral-400">
-      <div className="flex min-w-0 items-start gap-3">
+    <footer className="grid shrink-0 grid-cols-2 items-center gap-5 border-t border-line bg-panel px-5 py-3 text-xs leading-5 text-neutral-500 dark:border-[#333] dark:bg-[#20201f] dark:text-neutral-400">
+      <div className="flex min-w-0 items-center gap-3">
         <img
           src="/smart-promptcreator-icon.png"
           alt="SMART PromptCreator"
-          className="h-9 w-9 shrink-0 rounded object-cover"
+          className="h-[34px] w-[34px] shrink-0 rounded-[9px] object-cover"
           draggable={false}
         />
         <div className="min-w-0">
-          <p className="font-semibold text-neutral-700 dark:text-neutral-200">SMART PromptCreator</p>
+          <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">SMART PromptCreator</p>
           <p className="text-neutral-500 dark:text-neutral-400">Lokale Prompt-Werkstatt für bessere KI-Ergebnisse</p>
         </div>
       </div>
