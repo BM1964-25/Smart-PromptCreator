@@ -380,15 +380,15 @@ export default function App() {
           />
         </nav>
 
-        <div className="px-3 pb-3">
+        <div className="px-3 pb-4 pt-3">
           <button
-            className={`grid h-9 w-9 appearance-none place-items-center rounded bg-transparent p-0 text-neutral-500 transition hover:text-brand dark:text-neutral-400 dark:hover:text-[#f3f0e8] ${
-              sidebarCollapsed ? 'mx-auto' : ''
-            }`}
+            className={`sidebar-nav-row ${sidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}
             title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+            aria-label={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
             onClick={() => setSidebarCollapsed((current) => !current)}
           >
             {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            {!sidebarCollapsed && <span>Einklappen</span>}
           </button>
         </div>
 

@@ -1,4 +1,4 @@
-import { CheckCircle2, Copy, LoaderCircle, RotateCcw, Save, Settings2, Sparkles, Star, Tags, Trash2, Undo2 } from 'lucide-react';
+import { CheckCircle2, Copy, LoaderCircle, Mic, MicOff, RotateCcw, Save, Settings2, Sparkles, Star, Tags, Trash2, Undo2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
@@ -20,6 +20,41 @@ interface PromptEditorProps {
   onFocusPromptLocation?: (tabId: string, categoryId: string | undefined, promptId: string) => void;
 }
 
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: SpeechRecognitionResultEventLike) => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+interface SpeechRecognitionResultEventLike {
+  resultIndex: number;
+  results: SpeechRecognitionResultListLike;
+}
+
+interface SpeechRecognitionResultListLike {
+  length: number;
+  [index: number]: SpeechRecognitionResultLike | undefined;
+}
+
+interface SpeechRecognitionResultLike {
+  isFinal: boolean;
+  [index: number]: { transcript: string } | undefined;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
+}
+
 export function PromptEditor({
   prompt,
   settings,
@@ -39,10 +74,16 @@ export function PromptEditor({
   const [metadataBusy, setMetadataBusy] = useState<'derive' | 'regenerate'>();
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [contentDraft, setContentDraft] = useState(prompt?.content || '');
+  const [copyConfirmed, setCopyConfirmed] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const saveStatusTimer = useRef<number | undefined>(undefined);
   const saveSequence = useRef(0);
   const contentSaveTimer = useRef<number | undefined>(undefined);
   const contentDraftPromptId = useRef<string | undefined>(prompt?.id);
+  const copyConfirmTimer = useRef<number | undefined>(undefined);
+  const speechRecognition = useRef<SpeechRecognitionLike | undefined>(undefined);
+  const speechBaseText = useRef('');
+  const speechFinalText = useRef('');
   const promptDescription = prompt?.description || '';
   const contentStats = getTextStats(contentDraft);
   const optimizedStats = getTextStats(prompt?.optimizedContent || '');
@@ -233,7 +274,70 @@ export function PromptEditor({
     if (!prompt) return;
     if (!prompt.optimizedContent.trim()) return;
     await navigator.clipboard.writeText(prompt.optimizedContent);
+    setCopyConfirmed(true);
+    window.clearTimeout(copyConfirmTimer.current);
+    copyConfirmTimer.current = window.setTimeout(() => setCopyConfirmed(false), 1300);
     toast.success('Optimierte Version kopiert');
+  }
+
+  function startVoiceInput() {
+    const Recognition = getSpeechRecognitionConstructor();
+    if (!Recognition) {
+      showSystemDictationFallback();
+      return;
+    }
+
+    if (isListening) {
+      speechRecognition.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new Recognition();
+    speechRecognition.current = recognition;
+    speechBaseText.current = contentDraft;
+    speechFinalText.current = '';
+    recognition.lang = navigator.language || 'de-DE';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      let interimText = '';
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const transcript = event.results[index]?.[0]?.transcript || '';
+        if (event.results[index]?.isFinal) {
+          speechFinalText.current = appendSpeechText(speechFinalText.current, transcript);
+        } else {
+          interimText = appendSpeechText(interimText, transcript);
+        }
+      }
+      scheduleContentSave(appendSpeechText(speechBaseText.current, `${speechFinalText.current} ${interimText}`.trim()));
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      showSystemDictationFallback();
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      speechRecognition.current = undefined;
+    };
+
+    try {
+      recognition.start();
+      setIsListening(true);
+      toast.info('Spracheingabe gestartet');
+    } catch {
+      setIsListening(false);
+      showSystemDictationFallback();
+    }
+  }
+
+  function showSystemDictationFallback() {
+    toast.info('Direkte Spracheingabe ist hier nicht verfügbar.', {
+      description: 'Nutze System-Diktat: macOS über Diktierfunktion/Fn, Windows mit Windows + H, mobil über das Mikrofon der Tastatur.'
+    });
   }
 
   async function continueWithOptimizedContent() {
@@ -353,9 +457,10 @@ export function PromptEditor({
       </header>
 
       <div className="grid min-h-0 grid-cols-2 overflow-hidden">
-        <section className="grid min-h-0 min-w-0 grid-rows-[minmax(500px,58%)_minmax(240px,42%)] border-r border-line dark:border-[#333]">
-          <div className="min-h-0 overflow-y-auto border-b border-line p-3 dark:border-[#333]">
-            <div className="grid gap-3">
+        <section className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(180px,1fr)] border-r border-line dark:border-[#333]">
+          <div className="grid min-h-0 grid-rows-[auto_auto] p-3">
+            <div className="pr-1">
+              <div className="grid gap-3">
             <div className="px-1 py-1">
               <input
                 value={prompt.title}
@@ -364,7 +469,7 @@ export function PromptEditor({
               />
               <p className="text-xs text-neutral-500">Version {prompt.version} · lokal gespeichert</p>
             </div>
-            <div className="border-y border-line px-1 py-3 dark:border-[#333]">
+            <div className="px-1 py-3">
               <div className="relative grid grid-cols-4 gap-3">
                 <div className="absolute left-[12.5%] right-[12.5%] top-4 h-px bg-line dark:bg-[#333]" />
                 <WorkflowStep
@@ -460,7 +565,9 @@ export function PromptEditor({
               />
               Fehlende Informationen als Rückfragen ergänzen
             </label>
-            <div className="grid gap-3 border-t border-line pt-3 dark:border-[#333]">
+              </div>
+            </div>
+            <div className="grid shrink-0 gap-2 pt-3">
               <div>
                 <h2 className="text-sm font-semibold">Metadaten</h2>
                 <p className="text-xs text-neutral-500">Titel, Beschreibung, Kategorie und Tags für die Bibliothek.</p>
@@ -487,7 +594,7 @@ export function PromptEditor({
               <label className="grid gap-1 text-xs font-medium text-neutral-500">
                 Beschreibung
                 <textarea
-                  className="field min-h-20 resize-y leading-6"
+                  className="field min-h-16 resize-none leading-6"
                   value={promptDescription}
                   onChange={(event) => savePromptChanges({ description: event.target.value })}
                   placeholder="Kurze Beschreibung für die Prompt-Bibliothek"
@@ -554,7 +661,7 @@ export function PromptEditor({
                 />
               </label>
 
-              <div className="flex min-h-8 flex-wrap gap-2">
+              <div className="flex min-h-7 flex-wrap gap-2">
                 {prompt.tags.length === 0 && <span className="text-xs text-neutral-500">Noch keine Tags vergeben.</span>}
                 {prompt.tags.map((tag) => (
                   <button
@@ -569,7 +676,6 @@ export function PromptEditor({
               </div>
             </div>
           </div>
-          </div>
           <div className="flex min-h-0 flex-col p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
@@ -583,6 +689,16 @@ export function PromptEditor({
             <div className="relative min-h-0 flex-1">
               <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end p-3">
                 <button
+                  className={`pointer-events-auto mr-2 grid h-9 w-9 place-items-center rounded border border-[#cfc9bc] bg-white/90 text-neutral-500 shadow-sm transition hover:border-[#bdb5a6] hover:bg-white hover:text-neutral-700 dark:border-[#444] dark:bg-[#181817]/90 dark:text-neutral-400 dark:hover:text-neutral-200 ${
+                    isListening ? '!border-[#d36b5f] !bg-[#fff0ed] !text-[#b83224] dark:!border-[#9e4d43] dark:!bg-[#321714] dark:!text-[#ffb0a8]' : ''
+                  }`}
+                  title={isListening ? 'Aufnahme stoppen' : 'Spracheingabe starten'}
+                  aria-label={isListening ? 'Aufnahme stoppen' : 'Spracheingabe starten'}
+                  onClick={startVoiceInput}
+                >
+                  {getSpeechRecognitionConstructor() ? <Mic size={16} /> : <MicOff size={16} />}
+                </button>
+                <button
                   className="pointer-events-auto grid h-9 w-9 place-items-center rounded border border-[#cfc9bc] bg-white/90 text-neutral-500 shadow-sm transition hover:border-[#bdb5a6] hover:bg-white hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-100 dark:border-[#444] dark:bg-[#181817]/90 dark:text-neutral-400 dark:hover:text-neutral-200"
                   title="Eingabe leeren"
                   aria-label="Eingabe leeren"
@@ -595,7 +711,7 @@ export function PromptEditor({
               <textarea
                 value={contentDraft}
                 onChange={(event) => scheduleContentSave(event.target.value)}
-                className="h-full min-h-0 w-full resize-none rounded border border-line bg-[#fffefa] p-5 pr-16 pt-16 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:bg-white focus:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:text-[#f3f0e8] dark:focus:bg-[#151515]"
+                className="h-full min-h-32 w-full resize-none rounded border border-line bg-[#fffefa] p-5 pr-28 pt-16 text-[15px] leading-8 text-ink outline-none transition placeholder:text-neutral-400 focus:border-brand focus:bg-white focus:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:text-[#f3f0e8] dark:focus:bg-[#151515]"
                 placeholder="Beschreibe hier, was die KI tun soll..."
               />
             </div>
@@ -603,7 +719,7 @@ export function PromptEditor({
         </section>
 
         <section className="grid min-h-0 min-w-0 grid-rows-[minmax(500px,58%)_minmax(240px,42%)]">
-          <div className="min-h-0 overflow-y-auto border-b border-line p-3 pr-5 dark:border-[#333]">
+          <div className="min-h-0 overflow-y-auto p-3 pr-5">
             <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2">
               <div className="grid gap-2">
                 <div className="flex items-start justify-between gap-3">
@@ -693,7 +809,7 @@ export function PromptEditor({
             </div>
           </div>
           </div>
-          <div className="flex min-h-0 flex-col bg-[#faf8f1] p-4 pr-6 dark:bg-[#171716]">
+          <div className="flex min-h-0 flex-col p-4 pr-6">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold">Optimierte Ausgabe</h2>
@@ -705,7 +821,7 @@ export function PromptEditor({
                 </span>
               </div>
             </div>
-            <div className="relative min-h-44 flex-1 rounded border border-line bg-white transition focus-within:border-brand focus-within:shadow-soft dark:border-[#333] dark:bg-[#111]">
+            <div className="relative min-h-44 flex-1 rounded border border-line bg-[#fffefa] transition focus-within:border-brand focus-within:bg-white focus-within:shadow-soft dark:border-[#333] dark:bg-[#181817] dark:focus:bg-[#151515]">
               <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end p-3">
                 <button
                   className="pointer-events-auto grid h-9 w-9 place-items-center rounded border border-[#cfc9bc] bg-white/90 text-neutral-500 shadow-sm transition hover:border-[#bdb5a6] hover:bg-white hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-100 dark:border-[#444] dark:bg-[#181817]/90 dark:text-neutral-400 dark:hover:text-neutral-200"
@@ -714,7 +830,7 @@ export function PromptEditor({
                   onClick={copyOptimizedContent}
                   disabled={!prompt.optimizedContent.trim()}
                 >
-                  <Copy size={16} />
+                  {copyConfirmed ? <CheckCircle2 className="text-emerald-600" size={16} /> : <Copy size={16} />}
                 </button>
               </div>
               <textarea
@@ -758,6 +874,18 @@ function getTextStats(value: string) {
 
 function waitForSaveIndicator() {
   return new Promise((resolve) => window.setTimeout(resolve, 450));
+}
+
+function appendSpeechText(base: string, addition: string) {
+  const cleanBase = base.trimEnd();
+  const cleanAddition = addition.trim();
+  if (!cleanAddition) return cleanBase;
+  return `${cleanBase}${cleanBase ? ' ' : ''}${cleanAddition}`;
+}
+
+function getSpeechRecognitionConstructor() {
+  if (typeof window === 'undefined') return undefined;
+  return window.SpeechRecognition || window.webkitSpeechRecognition;
 }
 
 function AiActionIcon({ active, fallback }: { active: boolean; fallback: ReactNode }) {
