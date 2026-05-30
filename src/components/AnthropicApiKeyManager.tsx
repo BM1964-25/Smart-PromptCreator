@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, Plug, Save, Trash2, Un
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { db } from '../db/database';
-import { anthropicModelOptions, defaultAnthropicModel, normalizeAnthropicModel, testAnthropicConnection } from '../services/anthropicService';
+import { defaultAnthropicModel, normalizeAnthropicModel, testAnthropicConnection } from '../services/anthropicService';
 import type { Settings } from '../types/domain';
 import { decryptSecret, encryptSecret } from '../utils/crypto';
 
@@ -114,12 +114,6 @@ export function AnthropicApiKeyManager({ settings, onOpenHelp }: AnthropicApiKey
     }
   }
 
-  async function handleModelChange(model: string) {
-    await db.settings.update('app', { anthropicModel: model });
-    setIsConnected(false);
-    setFeedback({ tone: 'info', message: 'Claude-Modell geändert. Bitte die Verbindung erneut prüfen.' });
-  }
-
   async function handleConnect() {
     if (!activeApiKey) {
       setFeedback({ tone: 'error', message: 'Bitte zuerst einen Anthropic API-Schlüssel speichern oder eingeben.' });
@@ -196,11 +190,12 @@ export function AnthropicApiKeyManager({ settings, onOpenHelp }: AnthropicApiKey
   };
 
   return (
-    <section className="rounded border border-line bg-[#f4f1e8] p-4 shadow-sm dark:border-[#333] dark:bg-[#181817]">
+    <section className="rounded border border-[#c8dfd7] bg-[#f8fcfb] p-4 dark:border-[#28564c] dark:bg-[#12201d]">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold">Anthropic</h3>
-          <p className="mt-1 text-xs leading-5 text-neutral-500">Claude API-Schlüssel lokal speichern, Verbindung prüfen und für Optimierungen verwenden.</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">Option 2</p>
+          <h3 className="text-base font-semibold">Eigener Anthropic API-Key</h3>
+          <p className="mt-1 text-xs leading-5 text-neutral-600 dark:text-neutral-300">Du nutzt deinen eigenen Anthropic API-Key. Abrechnung und Nutzung laufen dann über dein Anthropic-Konto.</p>
           {onOpenHelp && (
             <button className="mt-2 text-xs font-semibold text-brand hover:underline" type="button" onClick={onOpenHelp}>
               So erhalten Sie einen Anthropic API-Schlüssel
@@ -213,17 +208,11 @@ export function AnthropicApiKeyManager({ settings, onOpenHelp }: AnthropicApiKey
       </div>
 
       <div className="grid gap-3">
-        <label className="grid gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-          Claude-Modell
-          <select className="field" value={selectedModel} onChange={(event) => handleModelChange(event.target.value)}>
-            {anthropicModelOptions.map((model) => (
-              <option key={model.value} value={model.value}>
-                {model.label} - {model.description}
-              </option>
-            ))}
-          </select>
-        </label>
+        <span className="w-fit rounded bg-[#f4e7c6] px-2 py-1 text-xs font-semibold text-[#755111]">Anthropic</span>
 
+        <label className="grid gap-1 text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+          Eigener Anthropic API-Key
+        </label>
         <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
           <input
             className="field"
@@ -258,6 +247,11 @@ export function AnthropicApiKeyManager({ settings, onOpenHelp }: AnthropicApiKey
           </button>
         </div>
 
+        <label className="flex items-center gap-2 text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+          <input className="h-4 w-4 accent-brand" type="checkbox" checked readOnly />
+          API-Key lokal in diesem Browser speichern
+        </label>
+
         <div className="grid grid-cols-4 gap-2">
           <button className="icon-button justify-center whitespace-nowrap" type="button" onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
@@ -269,11 +263,11 @@ export function AnthropicApiKeyManager({ settings, onOpenHelp }: AnthropicApiKey
           </button>
           <button className="icon-button justify-center whitespace-nowrap" type="button" onClick={handleCheckConnection} disabled={checking}>
             {checking ? <Loader2 className="animate-spin" size={16} /> : <Wifi size={16} />}
-            Prüfen
+            Verbindung prüfen
           </button>
           <button className="icon-button justify-center whitespace-nowrap" type="button" onClick={handleDisconnect} disabled={disconnecting || !isConnected}>
             {disconnecting ? <Loader2 className="animate-spin" size={16} /> : <Unplug size={16} />}
-            Trennen
+            Verbindung trennen
           </button>
         </div>
 
